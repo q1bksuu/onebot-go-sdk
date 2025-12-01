@@ -3,6 +3,6 @@ revision = 3
 requires-python = ">=3.8"
 
 [[package]]
-name = "onebot-11-go-sdk-generator"
+name = "onebot-go-sdk-generator-v11"
 version = "0.1.0"
 source = { virtual = "." }

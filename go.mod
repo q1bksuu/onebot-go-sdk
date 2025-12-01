@@ -1,3 +1,3 @@
-module github.com/q1bksuu/onebot-11-go-sdk
+module github.com/q1bksuu/onebot-go-sdk
 
 go 1.25
