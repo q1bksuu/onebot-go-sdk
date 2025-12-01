@@ -15,7 +15,7 @@ type SendPrivateMsgRequest struct {
 // SendPrivateMsgResponse 表示 send_private_msg API 的响应数据
 type SendPrivateMsgResponse struct {
 	// 消息 ID
-	MessageId int32 `json:"message_id"`
+	MessageId int64 `json:"message_id"`
 }
 
 // SendGroupMsgRequest 表示 send_group_msg API 的请求参数
@@ -33,7 +33,7 @@ type SendGroupMsgRequest struct {
 // SendGroupMsgResponse 表示 send_group_msg API 的响应数据
 type SendGroupMsgResponse struct {
 	// 消息 ID
-	MessageId int32 `json:"message_id"`
+	MessageId int64 `json:"message_id"`
 }
 
 // SendMsgRequest 表示 send_msg API 的请求参数
@@ -55,39 +55,39 @@ type SendMsgRequest struct {
 // SendMsgResponse 表示 send_msg API 的响应数据
 type SendMsgResponse struct {
 	// 消息 ID
-	MessageId int32 `json:"message_id"`
+	MessageId int64 `json:"message_id"`
 }
 
 // DeleteMsgRequest 表示 delete_msg API 的请求参数
 // 对应文档: 撤回消息
 type DeleteMsgRequest struct {
 	// 消息 ID
-	MessageId int32 `json:"message_id"`
+	MessageId int64 `json:"message_id"`
 }
 
 // DeleteMsgResponse 表示 delete_msg API 的响应数据
 type DeleteMsgResponse struct {
 	// 消息 ID
-	MessageId int32 `json:"message_id"`
+	MessageId int64 `json:"message_id"`
 }
 
 // GetMsgRequest 表示 get_msg API 的请求参数
 // 对应文档: 获取消息
 type GetMsgRequest struct {
 	// 消息 ID
-	MessageId int32 `json:"message_id"`
+	MessageId int64 `json:"message_id"`
 }
 
 // GetMsgResponse 表示 get_msg API 的响应数据
 type GetMsgResponse struct {
 	// 发送时间
-	Time int32 `json:"time"`
+	Time int64 `json:"time"`
 	// 消息类型，同 [消息事件](../event/message.md)
 	MessageType string `json:"message_type"`
 	// 消息 ID
-	MessageId int32 `json:"message_id"`
+	MessageId int64 `json:"message_id"`
 	// 消息真实 ID
-	RealId int32 `json:"real_id"`
+	RealId int64 `json:"real_id"`
 	// 发送人信息，同 [消息事件](../event/message.md)
 	Sender *map[string]interface{} `json:"sender"`
 	// 消息内容
@@ -409,7 +409,7 @@ type GetStrangerInfoResponse struct {
 	// 性别，`male` 或 `female` 或 `unknown`
 	Sex string `json:"sex"`
 	// 年龄
-	Age int32 `json:"age"`
+	Age int64 `json:"age"`
 }
 
 // GetFriendListRequest 表示 get_friend_list API 的请求参数
@@ -449,9 +449,9 @@ type GetGroupInfoResponse struct {
 	// 群名称
 	GroupName string `json:"group_name"`
 	// 成员数
-	MemberCount int32 `json:"member_count"`
+	MemberCount int64 `json:"member_count"`
 	// 最大成员数（群容量）
-	MaxMemberCount int32 `json:"max_member_count"`
+	MaxMemberCount int64 `json:"max_member_count"`
 }
 
 // GetGroupListRequest 表示 get_group_list API 的请求参数
@@ -499,13 +499,13 @@ type GetGroupMemberInfoResponse struct {
 	// 性别，`male` 或 `female` 或 `unknown`
 	Sex string `json:"sex"`
 	// 年龄
-	Age int32 `json:"age"`
+	Age int64 `json:"age"`
 	// 地区
 	Area string `json:"area"`
 	// 加群时间戳
-	JoinTime int32 `json:"join_time"`
+	JoinTime int64 `json:"join_time"`
 	// 最后发言时间戳
-	LastSentTime int32 `json:"last_sent_time"`
+	LastSentTime int64 `json:"last_sent_time"`
 	// 成员等级
 	Level string `json:"level"`
 	// 角色，`owner` 或 `admin` 或 `member`
@@ -515,7 +515,7 @@ type GetGroupMemberInfoResponse struct {
 	// 专属头衔
 	Title string `json:"title"`
 	// 专属头衔过期时间戳
-	TitleExpireTime int32 `json:"title_expire_time"`
+	TitleExpireTime int64 `json:"title_expire_time"`
 	// 是否允许修改群名片
 	CardChangeable bool `json:"card_changeable"`
 }
@@ -579,13 +579,13 @@ type GetCookiesResponse struct {
 // 对应文档: 获取 CSRF Token
 type GetCsrfTokenRequest struct {
 	// CSRF Token
-	Token int32 `json:"token"`
+	Token int64 `json:"token"`
 }
 
 // GetCsrfTokenResponse 表示 get_csrf_token API 的响应数据
 type GetCsrfTokenResponse struct {
 	// CSRF Token
-	Token int32 `json:"token"`
+	Token int64 `json:"token"`
 }
 
 // GetCredentialsRequest 表示 get_credentials API 的请求参数
@@ -600,7 +600,7 @@ type GetCredentialsResponse struct {
 	// Cookies
 	Cookies string `json:"cookies"`
 	// CSRF Token
-	CsrfToken int32 `json:"csrf_token"`
+	CsrfToken int64 `json:"csrf_token"`
 }
 
 // GetRecordRequest 表示 get_record API 的请求参数

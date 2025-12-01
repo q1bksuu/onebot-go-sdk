@@ -211,9 +211,9 @@ type PokeSegment struct {
 	// 类型 | 可能的值: 见 [Mirai 的 PokeMessage 类](https://github.com/mamoe/mirai/blob/f5eefae7ecee84d18a66afce3f89b89fe1584b78/mirai-core/src/commonMain/kotlin/net.mamoe.mirai/message/data/HummerMessage.kt#L49)
 	Type string `json:"type,omitempty"`
 	// ID | 可能的值: 同上
-	Id int32 `json:"id,omitempty"`
+	Id int64 `json:"id,omitempty"`
 	// 表情名
-	Name int32 `json:"name,omitempty"`
+	Name int64 `json:"name,omitempty"`
 }
 
 func (s *PokeSegment) SegmentType() MessageSegmentType {

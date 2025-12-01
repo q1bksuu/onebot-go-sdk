@@ -34,7 +34,9 @@ const (
 
 type ImageSegmentType string
 
-const ImageSegmentTypeFlash ImageSegmentType = "flash"
+const (
+	ImageSegmentTypeFlash ImageSegmentType = "flash"
+)
 
 type ContactSegmentType string
 
