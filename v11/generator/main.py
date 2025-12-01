@@ -11,11 +11,13 @@ OneBot 11 Go SDK 代码生成器主程序
     --package        Go 包名 (默认: onebot)
 """
 
-import sys
 import argparse
+import sys
 from pathlib import Path
-from markdown_parser import MarkdownParser
+
 from go_generator import GoCodeGenerator
+from markdown_parser import MarkdownParser
+from schema import *
 
 
 def main():
@@ -24,19 +26,19 @@ def main():
     parser.add_argument(
         "--input-dir",
         type=str,
-        default="../api",
-        help="输入 Markdown 文档目录",
+        default="../../",
+        help="输入 Markdown 文档根目录（包含 api 和 event 子目录）",
     )
     parser.add_argument(
         "--output-dir",
         type=str,
-        default="../output",
+        default="../models",
         help="输出 Go 代码目录",
     )
     parser.add_argument(
         "--package",
         type=str,
-        default="onebot",
+        default="models",
         help="Go 包名",
     )
 
@@ -62,33 +64,97 @@ def main():
     markdown_parser = MarkdownParser()
     go_generator = GoCodeGenerator(package_name=args.package)
 
-    # 查找并解析 API 文档
-    api_file = input_dir / "public.md"
-    if not api_file.exists():
-        print(f"❌ 错误: 找不到 API 文档: {api_file}")
-        return 1
-
-    print(f"\n🔍 解析 API 文档: {api_file}")
-
     try:
-        apis = markdown_parser.parse_api_file(str(api_file))
-        print(f"✅ 成功解析 {len(apis)} 个 API")
+        # ========== 解析 API 文档 ==========
+        api_dir = input_dir / "api"
+        api_file = api_dir / "public.md"
 
-        # 生成 Go 代码
-        print(f"\n⚙️  生成 Go 代码...")
-        go_code = go_generator.generate_all_apis(apis)
+        if api_file.exists():
+            print(f"\n🔍 解析 API 文档: {api_file}")
+            apis = markdown_parser.parse_api_file(str(api_file))
+            print(f"✅ 成功解析 {len(apis)} 个 API")
 
-        # 写入输出文件
-        models_file = output_dir / "models.go"
-        with open(models_file, "w", encoding="utf-8") as f:
-            f.write(go_code)
+            # 生成 API Go 代码
+            print(f"\n⚙️  生成 API Go 代码...")
+            api_code = go_generator.generate_all_apis(apis)
 
-        print(f"✅ 成功生成: {models_file}")
+            # 写入输出文件
+            api_output_file = output_dir / "api.go"
+            with open(api_output_file, "w", encoding="utf-8") as f:
+                f.write(api_code)
+
+            print(f"✅ 成功生成: {api_output_file}")
+        else:
+            print(f"⚠️  警告: 未找到 API 文档: {api_file}")
+            apis = []
+
+        # ========== 解析事件文档 ==========
+        event_dir = input_dir / "event"
+        event_files = [
+            event_dir / "message.md",
+            event_dir / "notice.md",
+            event_dir / "request.md",
+            event_dir / "meta.md",
+        ]
+
+        all_events = []
+        for event_file in event_files:
+            if event_file.exists():
+                print(f"\n🔍 解析事件文档: {event_file}")
+                events = markdown_parser.parse_event_file(str(event_file))
+                print(f"✅ 成功解析 {len(events)} 个事件")
+                all_events.extend(events)
+            else:
+                print(f"⚠️  警告: 未找到事件文档: {event_file}")
+
+        if all_events:
+            # 生成事件 Go 代码
+            print(f"\n⚙️  生成事件 Go 代码...")
+            event_code = go_generator.generate_all_events(all_events)
+
+            # 写入输出文件
+            event_output_file = output_dir / "event.go"
+            with open(event_output_file, "w", encoding="utf-8") as f:
+                f.write(event_code)
+
+            print(f"✅ 成功生成: {event_output_file}")
+
+        # ========== 解析消息段文档 ==========
+        message_dir = input_dir / "message"
+        message_file = message_dir / "segment.md"
+
+        all_segments = [] # type: List[MessageSegment]
+        if message_file.exists():
+            print(f"\n🔍 解析消息段文档: {message_file}")
+            segments = markdown_parser.parse_message_segment_file(str(message_file))
+            print(f"✅ 成功解析 {len(segments)} 个消息段")
+            all_segments.extend(segments)
+        else:
+            print(f"⚠️  警告: 未找到消息段文档: {message_file}")
+
+        if all_segments:
+            # 生成消息段 Go 代码
+            print(f"\n⚙️  生成消息段 Go 代码...")
+            message_code = go_generator.generate_all_message_segments(all_segments)
+
+            # 写入输出文件
+            message_output_file = output_dir / "message.go"
+            with open(message_output_file, "w", encoding="utf-8") as f:
+                f.write(message_code)
+
+            print(f"✅ 成功生成: {message_output_file}")
 
         # 统计信息
         print(f"\n📊 生成统计:")
         print(f"  - API 数量: {len(apis)}")
-        print(f"  - 输出文件: {models_file}")
+        print(f"  - 事件数量: {len(all_events)}")
+        print(f"  - 消息段数量: {len(all_segments)}")
+        if apis:
+            print(f"  - API 输出文件: {output_dir / 'api.go'}")
+        if all_events:
+            print(f"  - 事件输出文件: {output_dir / 'event.go'}")
+        if all_segments:
+            print(f"  - 消息段输出文件: {output_dir / 'message.go'}")
 
         return 0
 

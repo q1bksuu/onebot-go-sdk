@@ -4,7 +4,7 @@ Go 代码生成器
 """
 
 from typing import List, Optional
-from schema import Field, APIModel, APIDefinition, FieldType, MessageTypeVariant
+from schema import Field, APIModel, APIDefinition, EventModel, FieldType, MessageTypeVariant, MessageSegment
 from type_mapper import TypeMapper
 
 
@@ -246,3 +246,292 @@ func (m *MessageValue) MarshalJSON() ([]byte, error) {
             code_parts.append("\n\n")
 
         return "\n".join(code_parts)
+
+    def generate_all_events(self, events: List[EventModel]) -> str:
+        """
+        生成所有事件的模型代码
+
+        Args:
+            events: 事件定义列表
+
+        Returns:
+            生成的 Go 代码
+        """
+        code_parts = [self.generate_model_file_header(), self.generate_message_value_type(), "\n\n"]
+
+        # 添加 MessageValue 类型定义
+
+        # 生成每个事件的模型
+        for event in events:
+            code_parts.append(self._generate_event_model(event))
+            code_parts.append("\n\n")
+
+        return "\n".join(code_parts)
+
+    def _generate_event_model(self, event: EventModel) -> str:
+        """
+        生成单个事件的 Go 结构体代码
+
+        Args:
+            event: 事件模型
+
+        Returns:
+            生成的 Go 代码
+        """
+        # 生成事件结构体名称（去掉特殊字符，转为 PascalCase）
+        struct_name = self._event_name_to_struct_name(event.name)
+
+        # 生成注释
+        comment_lines = [
+            f"// {struct_name} {event.description}",
+        ]
+        if event.event_type:
+            comment_lines.append(f"// 事件类型: {event.event_type}")
+        if event.sub_type:
+            comment_lines.append(f"// 子类型: {event.sub_type}")
+
+        code_parts = [
+            "\n".join(comment_lines),
+            f"type {struct_name} struct {{",
+        ]
+
+        # 生成字段
+        for field in event.fields:
+            field_code = self._generate_field_code(field)
+            code_parts.append(field_code)
+
+        code_parts.append("}")
+
+        return "\n".join(code_parts)
+
+    def _event_name_to_struct_name(self, event_name: str) -> str:
+        """
+        将事件名称转换为 Go 结构体名称
+
+        Args:
+            event_name: 事件名称（如"私聊消息"、"群文件上传"）
+
+        Returns:
+            Go 结构体名称（如"PrivateMessageEvent"、"GroupFileUploadEvent"）
+        """
+        # 事件名称映射表
+        name_mapping = {
+            "私聊消息": "PrivateMessageEvent",
+            "群消息": "GroupMessageEvent",
+            "群文件上传": "GroupFileUploadEvent",
+            "群管理员变动": "GroupAdminChangeEvent",
+            "群成员减少": "GroupMemberDecreaseEvent",
+            "群成员增加": "GroupMemberIncreaseEvent",
+            "群禁言": "GroupBanEvent",
+            "好友添加": "FriendAddEvent",
+            "群消息撤回": "GroupRecallEvent",
+            "好友消息撤回": "FriendRecallEvent",
+            "群内戳一戳": "GroupPokeEvent",
+            "群红包运气王": "GroupLuckyKingEvent",
+            "群成员荣誉变更": "GroupHonorChangeEvent",
+            "加好友请求": "FriendRequestEvent",
+            "加群请求／邀请": "GroupRequestEvent",
+            "生命周期": "LifecycleEvent",
+            "心跳": "HeartbeatEvent",
+        }
+
+        # 如果有映射，使用映射的名称
+        if event_name in name_mapping:
+            return name_mapping[event_name]
+
+        # 否则尝试简单转换（去掉斜杠、空格等特殊字符）
+        clean_name = event_name.replace("／", "").replace("/", "").replace(" ", "")
+        return f"{clean_name}Event"
+
+    def generate_all_message_segments(self, segments: List[MessageSegment]) -> str:
+        """
+        生成所有消息段的模型代码
+
+        Args:
+            segments: 消息段定义列表
+
+        Returns:
+            生成的 Go 代码
+        """
+        code_parts = [self.generate_model_file_header()]
+
+        # 生成基础的 MessageSegment 结构体
+        code_parts.append(self._generate_base_message_segment())
+        code_parts.append("\n\n")
+
+        # 生成每个消息段的专用结构体
+        for segment in segments:
+            code_parts.append(self._generate_message_segment_model(segment))
+            code_parts.append("\n\n")
+
+        # 生成辅助方法
+        code_parts.append(self._generate_message_segment_helpers(segments))
+
+        return "\n".join(code_parts)
+
+    def _generate_base_message_segment(self) -> str:
+        """
+        生成基础的 MessageSegment 结构体定义
+        """
+        return '''// MessageSegment 表示一个通用消息段
+// 所有具体的消息段类型都应该能转换为此类型
+type MessageSegment struct {
+    Type string                 `json:"type"`
+    Data map[string]interface{} `json:"data"`
+}'''
+
+    def _generate_message_segment_model(self, segment: MessageSegment) -> str:
+        """
+        生成单个消息段的 Go 结构体代码
+
+        Args:
+            segment: 消息段模型
+
+        Returns:
+            生成的 Go 代码
+        """
+        # 生成结构体名称
+        struct_name = self._message_segment_type_to_struct_name(segment.segment_type)
+
+        # 生成注释
+        send_recv_info = []
+        if segment.can_send:
+            send_recv_info.append("支持发送")
+        if segment.can_receive:
+            send_recv_info.append("支持接收")
+        send_recv_str = "、".join(send_recv_info) if send_recv_info else "未知"
+
+        comment_lines = [
+            f"// {struct_name} {segment.description}",
+            f"// 消息段类型: {segment.segment_type}",
+            f"// {send_recv_str}",
+        ]
+
+        code_parts = [
+            "\n".join(comment_lines),
+            f"type {struct_name} struct {{",
+        ]
+
+        # 生成字段
+        if segment.fields:
+            for field in segment.fields:
+                field_code = self._generate_field_code(field)
+                code_parts.append(field_code)
+        else:
+            code_parts.append("    // 无参数")
+
+        code_parts.append("}")
+
+        # 生成转换方法
+        code_parts.append("")
+        code_parts.append(self._generate_to_message_segment_method(struct_name, segment.segment_type, segment.fields))
+
+        return "\n".join(code_parts)
+
+    def _message_segment_type_to_struct_name(self, segment_type: str) -> str:
+        """
+        将消息段类型转换为 Go 结构体名称
+
+        Args:
+            segment_type: 消息段类型（如"text"、"image"）
+
+        Returns:
+            Go 结构体名称（如"TextSegment"、"ImageSegment"）
+        """
+        # 消息段类型映射表
+        name_mapping = {
+            "text": "TextSegment",
+            "face": "FaceSegment",
+            "image": "ImageSegment",
+            "record": "RecordSegment",
+            "video": "VideoSegment",
+            "at": "AtSegment",
+            "rps": "RpsSegment",
+            "dice": "DiceSegment",
+            "shake": "ShakeSegment",
+            "poke": "PokeSegment",
+            "anonymous": "AnonymousSegment",
+            "share": "ShareSegment",
+            "contact": "ContactSegment",
+            "location": "LocationSegment",
+            "music": "MusicSegment",
+            "reply": "ReplySegment",
+            "forward": "ForwardSegment",
+            "node": "NodeSegment",
+            "xml": "XmlSegment",
+            "json": "JsonSegment",
+        }
+
+        # 如果有映射，使用映射的名称
+        if segment_type in name_mapping:
+            return name_mapping[segment_type]
+
+        # 否则使用 PascalCase 转换
+        return self._snake_to_pascal(segment_type) + "Segment"
+
+    def _generate_to_message_segment_method(self, struct_name: str, segment_type: str, fields: List[Field]) -> str:
+        """
+        生成转换为 MessageSegment 的方法
+
+        Args:
+            struct_name: 结构体名称
+            segment_type: 消息段类型
+            fields: 字段列表
+
+        Returns:
+            方法代码
+        """
+        code_lines = [
+            f"// ToMessageSegment 将 {struct_name} 转换为通用 MessageSegment",
+            f"func (s *{struct_name}) ToMessageSegment() MessageSegment {{",
+            "    data := make(map[string]interface{})",
+        ]
+
+        # 为每个字段生成赋值代码
+        for field in fields:
+            # 使用字段的 JSON 名称作为 map 的 key
+            code_lines.append(f"    data[\"{field.name}\"] = s.{field.go_name}")
+
+        code_lines.extend([
+            "    return MessageSegment{",
+            f"        Type: \"{segment_type}\",",
+            "        Data: data,",
+            "    }",
+            "}",
+        ])
+
+        return "\n".join(code_lines)
+
+    def _generate_message_segment_helpers(self, segments: List[MessageSegment]) -> str:
+        """
+        生成消息段辅助函数
+
+        Args:
+            segments: 消息段列表
+
+        Returns:
+            辅助函数代码
+        """
+        return '''// NewTextSegment 创建文本消息段
+func NewTextSegment(text string) MessageSegment {
+    return MessageSegment{
+        Type: "text",
+        Data: map[string]interface{}{"text": text},
+    }
+}
+
+// NewImageSegment 创建图片消息段
+func NewImageSegment(file string) MessageSegment {
+    return MessageSegment{
+        Type: "image",
+        Data: map[string]interface{}{"file": file},
+    }
+}
+
+// NewAtSegment 创建 @ 消息段
+func NewAtSegment(qq string) MessageSegment {
+    return MessageSegment{
+        Type: "at",
+        Data: map[string]interface{}{"qq": qq},
+    }
+}'''
