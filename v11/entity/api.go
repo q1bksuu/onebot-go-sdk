@@ -7,7 +7,7 @@ type SendPrivateMsgRequest struct {
 	UserId int64 `json:"user_id"`
 	// 要发送的内容
 	// 可以是字符串 (CQ 码格式) 或消息段数组
-	Message MessageValue `json:"message"`
+	Message *MessageValue `json:"message"`
 	// 消息内容是否作为纯文本发送（即不解析 CQ 码），只在 `message` 字段是字符串时有效 | 可能的值: false
 	AutoEscape bool `json:"auto_escape"`
 }
@@ -25,7 +25,7 @@ type SendGroupMsgRequest struct {
 	GroupId int64 `json:"group_id"`
 	// 要发送的内容
 	// 可以是字符串 (CQ 码格式) 或消息段数组
-	Message MessageValue `json:"message"`
+	Message *MessageValue `json:"message"`
 	// 消息内容是否作为纯文本发送（即不解析 CQ 码），只在 `message` 字段是字符串时有效 | 可能的值: false
 	AutoEscape bool `json:"auto_escape"`
 }
@@ -47,7 +47,7 @@ type SendMsgRequest struct {
 	GroupId int64 `json:"group_id"`
 	// 要发送的内容
 	// 可以是字符串 (CQ 码格式) 或消息段数组
-	Message MessageValue `json:"message"`
+	Message *MessageValue `json:"message"`
 	// 消息内容是否作为纯文本发送（即不解析 CQ 码），只在 `message` 字段是字符串时有效 | 可能的值: false
 	AutoEscape bool `json:"auto_escape"`
 }
@@ -92,7 +92,7 @@ type GetMsgResponse struct {
 	Sender *map[string]interface{} `json:"sender"`
 	// 消息内容
 	// 可以是字符串 (CQ 码格式) 或消息段数组
-	Message MessageValue `json:"message"`
+	Message *MessageValue `json:"message"`
 }
 
 // GetForwardMsgRequest 表示 get_forward_msg API 的请求参数
@@ -106,7 +106,7 @@ type GetForwardMsgRequest struct {
 type GetForwardMsgResponse struct {
 	// 消息内容，使用 [消息的数组格式](../message/array.md) 表示，数组中的消息段全部为 [`node` 消息段](../message/segment.md#合并转发自定义节点)
 	// 可以是字符串 (CQ 码格式) 或消息段数组
-	Message MessageValue `json:"message"`
+	Message *MessageValue `json:"message"`
 }
 
 // SendLikeRequest 表示 send_like API 的请求参数

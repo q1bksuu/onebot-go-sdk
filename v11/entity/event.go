@@ -20,7 +20,7 @@ type PrivateMessageEvent struct {
 	UserId int64 `json:"user_id"`
 	// 消息内容
 	// 可以是字符串 (CQ 码格式) 或消息段数组
-	Message MessageValue `json:"message"`
+	Message *MessageValue `json:"message"`
 	// 原始消息内容
 	RawMessage string `json:"raw_message"`
 	// 字体
@@ -53,7 +53,7 @@ type GroupMessageEvent struct {
 	Anonymous *map[string]interface{} `json:"anonymous"`
 	// 消息内容
 	// 可以是字符串 (CQ 码格式) 或消息段数组
-	Message MessageValue `json:"message"`
+	Message *MessageValue `json:"message"`
 	// 原始消息内容
 	RawMessage string `json:"raw_message"`
 	// 字体

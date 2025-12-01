@@ -102,15 +102,15 @@ type ImageSegment struct {
 	// 图片文件名
 	File string `json:"file,omitempty"`
 	// 图片类型，`flash` 表示闪照，无此参数表示普通图片 | 可能的值: flash
-	Type string `json:"type,omitempty"`
+	Type ImageSegmentType `json:"type,omitempty"`
 	// 图片 URL
 	Url string `json:"url,omitempty"`
 	// 只在通过网络 URL 发送时有效，表示是否使用已缓存的文件，默认 `1`
-	Cache string `json:"cache,omitempty"`
+	Cache *int `json:"cache,omitempty"`
 	// 只在通过网络 URL 发送时有效，表示是否通过代理下载文件（需通过环境变量或配置文件配置代理），默认 `1`
-	Proxy string `json:"proxy,omitempty"`
+	Proxy *int `json:"proxy,omitempty"`
 	// 只在通过网络 URL 发送时有效，单位秒，表示下载网络文件的超时时间，默认不超时
-	Timeout string `json:"timeout,omitempty"`
+	Timeout int64 `json:"timeout,omitempty"`
 }
 
 func (s *ImageSegment) SegmentType() MessageSegmentType {
@@ -123,16 +123,16 @@ func (s *ImageSegment) SegmentType() MessageSegmentType {
 type RecordSegment struct {
 	// 语音文件名
 	File string `json:"file,omitempty"`
-	// 发送时可选，默认 `0`，设置为 `1` 表示变声 | 可能的值: 0` `1
-	Magic string `json:"magic,omitempty"`
+	// 发送时可选，默认 `0`，设置为 `1` 表示变声 | 可能的值: `0` `1`
+	Magic *int `json:"magic,omitempty"`
 	// 语音 URL
 	Url string `json:"url,omitempty"`
 	// 只在通过网络 URL 发送时有效，表示是否使用已缓存的文件，默认 `1`
-	Cache string `json:"cache,omitempty"`
+	Cache *int `json:"cache,omitempty"`
 	// 只在通过网络 URL 发送时有效，表示是否通过代理下载文件（需通过环境变量或配置文件配置代理），默认 `1`
-	Proxy string `json:"proxy,omitempty"`
+	Proxy *int `json:"proxy,omitempty"`
 	// 只在通过网络 URL 发送时有效，单位秒，表示下载网络文件的超时时间 ，默认不超时
-	Timeout string `json:"timeout,omitempty"`
+	Timeout int64 `json:"timeout,omitempty"`
 }
 
 func (s *RecordSegment) SegmentType() MessageSegmentType {
@@ -148,11 +148,11 @@ type VideoSegment struct {
 	// 视频 URL
 	Url string `json:"url,omitempty"`
 	// 只在通过网络 URL 发送时有效，表示是否使用已缓存的文件，默认 `1`
-	Cache string `json:"cache,omitempty"`
+	Cache *int `json:"cache,omitempty"`
 	// 只在通过网络 URL 发送时有效，表示是否通过代理下载文件（需通过环境变量或配置文件配置代理），默认 `1`
-	Proxy string `json:"proxy,omitempty"`
+	Proxy *int `json:"proxy,omitempty"`
 	// 只在通过网络 URL 发送时有效，单位秒，表示下载网络文件的超时时间 ，默认不超时
-	Timeout string `json:"timeout,omitempty"`
+	Timeout int64 `json:"timeout,omitempty"`
 }
 
 func (s *VideoSegment) SegmentType() MessageSegmentType {
@@ -211,9 +211,9 @@ type PokeSegment struct {
 	// 类型 | 可能的值: 见 [Mirai 的 PokeMessage 类](https://github.com/mamoe/mirai/blob/f5eefae7ecee84d18a66afce3f89b89fe1584b78/mirai-core/src/commonMain/kotlin/net.mamoe.mirai/message/data/HummerMessage.kt#L49)
 	Type string `json:"type,omitempty"`
 	// ID | 可能的值: 同上
-	Id string `json:"id,omitempty"`
+	Id int32 `json:"id,omitempty"`
 	// 表情名
-	Name string `json:"name,omitempty"`
+	Name int32 `json:"name,omitempty"`
 }
 
 func (s *PokeSegment) SegmentType() MessageSegmentType {
@@ -224,8 +224,8 @@ func (s *PokeSegment) SegmentType() MessageSegmentType {
 // 消息段类型: anonymous
 // 支持发送
 type AnonymousSegment struct {
-	// 可选，表示无法匿名时是否继续发送
-	Ignore string `json:"ignore,omitempty"`
+	// 可选，表示无法匿名时是否继续发送 | 可能的值: `0`, `1`
+	Ignore *int `json:"ignore,omitempty"`
 }
 
 func (s *AnonymousSegment) SegmentType() MessageSegmentType {
@@ -241,9 +241,9 @@ type ShareSegment struct {
 	// 标题
 	Title string `json:"title,omitempty"`
 	// 发送时可选，内容描述
-	Content string `json:"content,omitempty"`
+	Content *string `json:"content,omitempty"`
 	// 发送时可选，图片 URL
-	Image string `json:"image,omitempty"`
+	Image *string `json:"image,omitempty"`
 }
 
 func (s *ShareSegment) SegmentType() MessageSegmentType {
@@ -255,7 +255,7 @@ func (s *ShareSegment) SegmentType() MessageSegmentType {
 // 支持发送、支持接收
 type ContactSegment struct {
 	// 推荐好友 | 可能的值: qq, group
-	Type string `json:"type,omitempty"`
+	Type ContactSegmentType `json:"type,omitempty"`
 	// 被推荐人的 QQ 号/群号
 	Id string `json:"id,omitempty"`
 }
@@ -273,9 +273,9 @@ type LocationSegment struct {
 	// 经度
 	Lon string `json:"lon,omitempty"`
 	// 发送时可选，标题
-	Title string `json:"title,omitempty"`
+	Title *string `json:"title,omitempty"`
 	// 发送时可选，内容描述
-	Content string `json:"content,omitempty"`
+	Content *string `json:"content,omitempty"`
 }
 
 func (s *LocationSegment) SegmentType() MessageSegmentType {
@@ -300,9 +300,9 @@ type MusicSegment struct {
 	// 标题
 	Title string `json:"title,omitempty"`
 	// 发送时可选，内容描述
-	Content string `json:"content,omitempty"`
+	Content *string `json:"content,omitempty"`
 	// 发送时可选，图片 URL
-	Image string `json:"image,omitempty"`
+	Image *string `json:"image,omitempty"`
 }
 
 func (s *MusicSegment) SegmentType() MessageSegmentType {
@@ -325,7 +325,7 @@ func (s *ReplySegment) SegmentType() MessageSegmentType {
 // 消息段类型: forward
 // 支持接收
 type ForwardSegment struct {
-	// 合并转发 ID，需通过 [`get_forward_msg` API](../api/public.md#get_forward_msg-获取合并转发消息) 获取具体内容
+	// 合并转发 ID，需通过 get_forward_msg-获取合并转发消息 获取具体内容
 	Id string `json:"id,omitempty"`
 }
 
@@ -353,8 +353,8 @@ type NodeSegment struct {
 	UserId string `json:"user_id,omitempty"`
 	// 发送者昵称
 	Nickname string `json:"nickname,omitempty"`
-	// 消息内容，支持发送消息时的 `message` 数据类型，见 [API 的参数](../api/#参数)
-	Content string `json:"content,omitempty"`
+	// 消息内容，支持发送消息时的 `message` 数据类型
+	Content *MessageValue `json:"content,omitempty"`
 }
 
 func (s *NodeSegment) SegmentType() MessageSegmentType {
