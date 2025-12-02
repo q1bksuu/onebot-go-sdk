@@ -5,19 +5,19 @@ import (
 	"encoding/json"
 )
 
-type MessageSegmentData interface {
-	SegmentType() MessageSegmentType
+type SegmentData interface {
+	SegmentType() SegmentType
 }
 
-// MessageSegment 表示一个通用消息段
+// Segment 表示一个通用消息段
 // 所有具体的消息段类型都应该能转换为此类型
-type MessageSegment struct {
-	Type MessageSegmentType `json:"type"`
-	Data MessageSegmentData `json:"data"`
+type Segment struct {
+	Type SegmentType `json:"type"`
+	Data SegmentData `json:"data"`
 }
 
-func NewMessageSegment(data MessageSegmentData) *MessageSegment {
-	return &MessageSegment{
+func NewSegment(data SegmentData) *Segment {
+	return &Segment{
 		Type: data.SegmentType(),
 		Data: data,
 	}
@@ -28,9 +28,9 @@ func NewMessageSegment(data MessageSegmentData) *MessageSegment {
 type MessageValue struct {
 	// 如果 Type 为 "string"，则使用 StringValue
 	// 如果 Type 为 "array"，则使用 ArrayValue
-	Type        MessageValueType  `json:"-"`
-	StringValue string            `json:"-"`
-	ArrayValue  []*MessageSegment `json:"-"`
+	Type        MessageValueType `json:"-"`
+	StringValue string           `json:"-"`
+	ArrayValue  []*Segment       `json:"-"`
 }
 
 // UnmarshalJSON 实现 json.Unmarshaler 接口
@@ -47,7 +47,7 @@ func (m *MessageValue) UnmarshalJSON(data []byte) error {
 	}
 
 	// 然后尝试作为数组解析
-	var arr []*MessageSegment
+	var arr []*Segment
 	if bytes.HasPrefix(data, []byte{'['}) {
 		if err := json.Unmarshal(data, &arr); err == nil {
 			m.Type = MessageValueTypeArray
@@ -79,8 +79,8 @@ type TextSegment struct {
 	Text string `json:"text,omitempty"`
 }
 
-func (s *TextSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeText
+func (s *TextSegment) SegmentType() SegmentType {
+	return SegmentTypeText
 }
 
 // FaceSegment QQ 表情
@@ -91,8 +91,8 @@ type FaceSegment struct {
 	Id string `json:"id,omitempty"`
 }
 
-func (s *FaceSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeFace
+func (s *FaceSegment) SegmentType() SegmentType {
+	return SegmentTypeFace
 }
 
 // ImageSegment 图片
@@ -113,8 +113,8 @@ type ImageSegment struct {
 	Timeout int64 `json:"timeout,omitempty"`
 }
 
-func (s *ImageSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeImage
+func (s *ImageSegment) SegmentType() SegmentType {
+	return SegmentTypeImage
 }
 
 // RecordSegment 语音
@@ -135,8 +135,8 @@ type RecordSegment struct {
 	Timeout int64 `json:"timeout,omitempty"`
 }
 
-func (s *RecordSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeRecord
+func (s *RecordSegment) SegmentType() SegmentType {
+	return SegmentTypeRecord
 }
 
 // VideoSegment 短视频
@@ -155,8 +155,8 @@ type VideoSegment struct {
 	Timeout int64 `json:"timeout,omitempty"`
 }
 
-func (s *VideoSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeVideo
+func (s *VideoSegment) SegmentType() SegmentType {
+	return SegmentTypeVideo
 }
 
 // AtSegment @某人
@@ -167,8 +167,8 @@ type AtSegment struct {
 	Qq string `json:"qq,omitempty"`
 }
 
-func (s *AtSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeAt
+func (s *AtSegment) SegmentType() SegmentType {
+	return SegmentTypeAt
 }
 
 // RpsSegment 猜拳魔法表情
@@ -178,8 +178,8 @@ type RpsSegment struct {
 	// 无参数
 }
 
-func (s *RpsSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeRps
+func (s *RpsSegment) SegmentType() SegmentType {
+	return SegmentTypeRps
 }
 
 // DiceSegment 掷骰子魔法表情
@@ -189,8 +189,8 @@ type DiceSegment struct {
 	// 无参数
 }
 
-func (s *DiceSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeDice
+func (s *DiceSegment) SegmentType() SegmentType {
+	return SegmentTypeDice
 }
 
 // ShakeSegment 窗口抖动（戳一戳）
@@ -200,15 +200,15 @@ type ShakeSegment struct {
 	// 无参数
 }
 
-func (s *ShakeSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeShake
+func (s *ShakeSegment) SegmentType() SegmentType {
+	return SegmentTypeShake
 }
 
 // PokeSegment 戳一戳
 // 消息段类型: poke
 // 支持发送、支持接收
 type PokeSegment struct {
-	// 类型 | 可能的值: 见 [Mirai 的 PokeMessage 类](https://github.com/mamoe/mirai/blob/f5eefae7ecee84d18a66afce3f89b89fe1584b78/mirai-core/src/commonMain/kotlin/net.mamoe.mirai/message/data/HummerMessage.kt#L49)
+	// 类型 | 可能的值: 见 segment_consts.go 中的 PokeSegment enums.
 	Type string `json:"type,omitempty"`
 	// ID | 可能的值: 同上
 	Id int64 `json:"id,omitempty"`
@@ -216,8 +216,8 @@ type PokeSegment struct {
 	Name int64 `json:"name,omitempty"`
 }
 
-func (s *PokeSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypePoke
+func (s *PokeSegment) SegmentType() SegmentType {
+	return SegmentTypePoke
 }
 
 // AnonymousSegment 匿名发消息
@@ -228,8 +228,8 @@ type AnonymousSegment struct {
 	Ignore *int `json:"ignore,omitempty"`
 }
 
-func (s *AnonymousSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeAnonymous
+func (s *AnonymousSegment) SegmentType() SegmentType {
+	return SegmentTypeAnonymous
 }
 
 // ShareSegment 链接分享
@@ -246,8 +246,8 @@ type ShareSegment struct {
 	Image *string `json:"image,omitempty"`
 }
 
-func (s *ShareSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeShare
+func (s *ShareSegment) SegmentType() SegmentType {
+	return SegmentTypeShare
 }
 
 // ContactSegment 推荐好友
@@ -260,8 +260,8 @@ type ContactSegment struct {
 	Id string `json:"id,omitempty"`
 }
 
-func (s *ContactSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeContact
+func (s *ContactSegment) SegmentType() SegmentType {
+	return SegmentTypeContact
 }
 
 // LocationSegment 位置
@@ -278,8 +278,8 @@ type LocationSegment struct {
 	Content *string `json:"content,omitempty"`
 }
 
-func (s *LocationSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeLocation
+func (s *LocationSegment) SegmentType() SegmentType {
+	return SegmentTypeLocation
 }
 
 // MusicSegment 音乐自定义分享
@@ -305,8 +305,8 @@ type MusicSegment struct {
 	Image *string `json:"image,omitempty"`
 }
 
-func (s *MusicSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeMusic
+func (s *MusicSegment) SegmentType() SegmentType {
+	return SegmentTypeMusic
 }
 
 // ReplySegment 回复
@@ -317,8 +317,8 @@ type ReplySegment struct {
 	Id string `json:"id,omitempty"`
 }
 
-func (s *ReplySegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeReply
+func (s *ReplySegment) SegmentType() SegmentType {
+	return SegmentTypeReply
 }
 
 // ForwardSegment 合并转发
@@ -329,8 +329,8 @@ type ForwardSegment struct {
 	Id string `json:"id,omitempty"`
 }
 
-func (s *ForwardSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeForward
+func (s *ForwardSegment) SegmentType() SegmentType {
+	return SegmentTypeForward
 }
 
 // NodeSegmentId 合并转发节点
@@ -341,8 +341,8 @@ type NodeSegmentId struct {
 	Id string `json:"id,omitempty"`
 }
 
-func (s *NodeSegmentId) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeNode
+func (s *NodeSegmentId) SegmentType() SegmentType {
+	return SegmentTypeNode
 }
 
 // NodeSegment 合并转发自定义节点
@@ -357,8 +357,8 @@ type NodeSegment struct {
 	Content *MessageValue `json:"content,omitempty"`
 }
 
-func (s *NodeSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeNode
+func (s *NodeSegment) SegmentType() SegmentType {
+	return SegmentTypeNode
 }
 
 // XmlSegment XML 消息
@@ -369,8 +369,8 @@ type XmlSegment struct {
 	Data string `json:"data,omitempty"`
 }
 
-func (s *XmlSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeXml
+func (s *XmlSegment) SegmentType() SegmentType {
+	return SegmentTypeXml
 }
 
 // JsonSegment JSON 消息
@@ -381,6 +381,6 @@ type JsonSegment struct {
 	Data json.RawMessage `json:"data,omitempty"`
 }
 
-func (s *JsonSegment) SegmentType() MessageSegmentType {
-	return MessageSegmentTypeJson
+func (s *JsonSegment) SegmentType() SegmentType {
+	return SegmentTypeJson
 }

@@ -7,29 +7,29 @@ const (
 	MessageValueTypeArray  MessageValueType = "array"
 )
 
-type MessageSegmentType string
+type SegmentType string
 
 const (
-	MessageSegmentTypeText      MessageSegmentType = "text"
-	MessageSegmentTypeFace      MessageSegmentType = "face"
-	MessageSegmentTypeImage     MessageSegmentType = "image"
-	MessageSegmentTypeRecord    MessageSegmentType = "record"
-	MessageSegmentTypeVideo     MessageSegmentType = "video"
-	MessageSegmentTypeAt        MessageSegmentType = "at"
-	MessageSegmentTypeRps       MessageSegmentType = "rps"
-	MessageSegmentTypeDice      MessageSegmentType = "dice"
-	MessageSegmentTypeShake     MessageSegmentType = "shake"
-	MessageSegmentTypePoke      MessageSegmentType = "poke"
-	MessageSegmentTypeAnonymous MessageSegmentType = "anonymous"
-	MessageSegmentTypeShare     MessageSegmentType = "share"
-	MessageSegmentTypeContact   MessageSegmentType = "contact"
-	MessageSegmentTypeLocation  MessageSegmentType = "location"
-	MessageSegmentTypeMusic     MessageSegmentType = "music"
-	MessageSegmentTypeReply     MessageSegmentType = "reply"
-	MessageSegmentTypeForward   MessageSegmentType = "forward"
-	MessageSegmentTypeNode      MessageSegmentType = "node"
-	MessageSegmentTypeXml       MessageSegmentType = "xml"
-	MessageSegmentTypeJson      MessageSegmentType = "json"
+	SegmentTypeText      SegmentType = "text"
+	SegmentTypeFace      SegmentType = "face"
+	SegmentTypeImage     SegmentType = "image"
+	SegmentTypeRecord    SegmentType = "record"
+	SegmentTypeVideo     SegmentType = "video"
+	SegmentTypeAt        SegmentType = "at"
+	SegmentTypeRps       SegmentType = "rps"
+	SegmentTypeDice      SegmentType = "dice"
+	SegmentTypeShake     SegmentType = "shake"
+	SegmentTypePoke      SegmentType = "poke"
+	SegmentTypeAnonymous SegmentType = "anonymous"
+	SegmentTypeShare     SegmentType = "share"
+	SegmentTypeContact   SegmentType = "contact"
+	SegmentTypeLocation  SegmentType = "location"
+	SegmentTypeMusic     SegmentType = "music"
+	SegmentTypeReply     SegmentType = "reply"
+	SegmentTypeForward   SegmentType = "forward"
+	SegmentTypeNode      SegmentType = "node"
+	SegmentTypeXml       SegmentType = "xml"
+	SegmentTypeJson      SegmentType = "json"
 )
 
 type ImageSegmentType string
