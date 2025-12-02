@@ -26,7 +26,18 @@ type PrivateMessageEvent struct {
 	// 字体
 	Font int64 `json:"font"`
 	// 发送人信息
-	Sender *map[string]interface{} `json:"sender"`
+	Sender *PrivateMessageEventSender `json:"sender"`
+}
+
+type PrivateMessageEventSender struct {
+	// QQ 号
+	UserId int64 `json:"user_id"`
+	// 昵称
+	Nickname string `json:"nickname"`
+	// 性别，`male` 或 `female` 或 `unknown`
+	Sex SexType `json:"sex"`
+	// 年龄
+	Age int64 `json:"age"`
 }
 
 // GroupMessageEvent 群消息
@@ -50,7 +61,7 @@ type GroupMessageEvent struct {
 	// 发送者 QQ 号
 	UserId int64 `json:"user_id"`
 	// 匿名信息，如果不是匿名消息则为 null
-	Anonymous *map[string]interface{} `json:"anonymous"`
+	Anonymous *GroupAnonymousUser `json:"anonymous"`
 	// 消息内容
 	// 可以是字符串 (CQ 码格式) 或消息段数组
 	Message *MessageValue `json:"message"`
@@ -59,7 +70,28 @@ type GroupMessageEvent struct {
 	// 字体
 	Font int64 `json:"font"`
 	// 发送人信息
-	Sender *map[string]interface{} `json:"sender"`
+	Sender *GroupMessageEventSender `json:"sender"`
+}
+
+type GroupMessageEventSender struct {
+	// 发送者 QQ 号
+	UserId int64 `json:"user_id"`
+	// 昵称
+	Nickname string `json:"nickname"`
+	// 群名片／备注
+	Card string `json:"card"`
+	// 性别，male 或 female 或 unknown
+	Sex SexType `json:"sex"`
+	// 年龄
+	Age int64 `json:"age"`
+	// 地区
+	Area string `json:"area"`
+	// 成员等级
+	Level string `json:"level"`
+	// 角色，owner 或 admin 或 member
+	Role GroupMemberRoleType `json:"role"`
+	// 专属头衔
+	Title string `json:"title"`
 }
 
 // GroupFileUploadEvent 群文件上传
@@ -78,7 +110,18 @@ type GroupFileUploadEvent struct {
 	// 发送者 QQ 号
 	UserId int64 `json:"user_id"`
 	// 文件信息
-	File *map[string]interface{} `json:"file"`
+	File *GroupFileUploadEventFile `json:"file"`
+}
+
+type GroupFileUploadEventFile struct {
+	// 文件 ID
+	Id string `json:"id"`
+	// 文件名
+	Name string `json:"name"`
+	// 文件大小（字节数）
+	Size int64 `json:"size"`
+	// busid（目前不清楚有什么作用）
+	BusId int64 `json:"busid"`
 }
 
 // GroupAdminChangeEvent 群管理员变动
@@ -237,11 +280,11 @@ type GroupPokeEvent struct {
 	// 提示类型 | 可能的值: poke
 	SubType GroupPokeEventSubType `json:"sub_type"`
 	// 群号
-	GroupId interface{} `json:"group_id"`
+	GroupId int64 `json:"group_id"`
 	// 发送者 QQ 号
-	UserId interface{} `json:"user_id"`
+	UserId int64 `json:"user_id"`
 	// 被戳者 QQ 号
-	TargetId interface{} `json:"target_id"`
+	TargetId int64 `json:"target_id"`
 }
 
 // GroupLuckyKingEvent 群红包运气王
@@ -259,11 +302,11 @@ type GroupLuckyKingEvent struct {
 	// 提示类型 | 可能的值: lucky_king
 	SubType GroupLuckyKingEventSubType `json:"sub_type"`
 	// 群号
-	GroupId interface{} `json:"group_id"`
+	GroupId int64 `json:"group_id"`
 	// 红包发送者 QQ 号
-	UserId interface{} `json:"user_id"`
+	UserId int64 `json:"user_id"`
 	// 运气王 QQ 号
-	TargetId interface{} `json:"target_id"`
+	TargetId int64 `json:"target_id"`
 }
 
 // GroupHonorChangeEvent 群成员荣誉变更
@@ -281,11 +324,11 @@ type GroupHonorChangeEvent struct {
 	// 提示类型 | 可能的值: honor
 	SubType GroupHonorChangeEventSubType `json:"sub_type"`
 	// 群号
-	GroupId interface{} `json:"group_id"`
+	GroupId int64 `json:"group_id"`
 	// 荣誉类型，分别表示龙王、群聊之火、快乐源泉 | 可能的值: talkative, performer, emotion
 	HonorType GroupHonorChangeEventHonorType `json:"honor_type"`
 	// 成员 QQ 号
-	UserId interface{} `json:"user_id"`
+	UserId int64 `json:"user_id"`
 }
 
 // FriendRequestEvent 加好友请求
@@ -359,7 +402,7 @@ type HeartbeatEvent struct {
 	// 元事件类型 | 可能的值: heartbeat
 	MetaEventType HeartbeatEventMetaEventType `json:"meta_event_type"`
 	// 状态信息
-	Status *map[string]interface{} `json:"status"`
+	Status *StatusMeta `json:"status"`
 	// 到下次心跳的间隔，单位毫秒
 	Interval int64 `json:"interval"`
 }

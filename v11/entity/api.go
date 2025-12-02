@@ -165,7 +165,7 @@ type SetGroupAnonymousBanRequest struct {
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 可选，要禁言的匿名用户对象（群消息上报的 `anonymous` 字段）
-	Anonymous any `json:"anonymous,omitempty"`
+	Anonymous *GroupAnonymousUser `json:"anonymous,omitempty"`
 	// 可选，要禁言的匿名用户的 flag（需从群消息上报的数据中获得）
 	AnonymousFlag string `json:"anonymous_flag,omitempty"`
 	// 禁言时长，单位秒，无法取消匿名用户禁言 | 可能的值: 30 * 60
@@ -570,13 +570,7 @@ type CanSendRecordResponse struct {
 type GetStatusRequest struct{}
 
 // GetStatusResponse 表示 get_status API 的响应数据
-type GetStatusResponse struct {
-	// 当前 QQ 在线，`null` 表示无法查询到在线状态
-	Online bool `json:"online"`
-	// 状态符合预期，意味着各模块正常运行、功能正常，且 QQ 在线
-	Good bool `json:"good"`
-	// TODO 其他状态信息，视 OneBot 实现而定
-}
+type GetStatusResponse = StatusMeta
 
 // GetVersionInfoRequest 表示 get_version_info API 的请求参数
 // 对应文档: 获取版本信息

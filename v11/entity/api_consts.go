@@ -7,14 +7,6 @@ const (
 	MessageTypeGroup   MessageType = "group"
 )
 
-type SexType string
-
-const (
-	SexTypeMale    SexType = "male"
-	SexTypeFemale  SexType = "female"
-	SexTypeUnknown SexType = "unknown"
-)
-
 type GroupMemberRoleType string
 
 const (
