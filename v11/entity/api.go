@@ -40,7 +40,7 @@ type SendGroupMsgResponse struct {
 // 对应文档: 发送消息
 type SendMsgRequest struct {
 	// 消息类型，支持 `private`、`group`，分别对应私聊、群组，如不传入，则根据传入的 `*_id` 参数判断
-	MessageType string `json:"message_type"`
+	MessageType MessageType `json:"message_type"`
 	// 对方 QQ 号（消息类型为 `private` 时需要）
 	UserId int64 `json:"user_id"`
 	// 群号（消息类型为 `group` 时需要）
@@ -66,9 +66,19 @@ type DeleteMsgRequest struct {
 }
 
 // DeleteMsgResponse 表示 delete_msg API 的响应数据
-type DeleteMsgResponse struct {
-	// 消息 ID
-	MessageId int64 `json:"message_id"`
+type DeleteMsgResponse struct{}
+
+type BaseUser struct {
+	// QQ 号
+	UserId int64 `json:"user_id"`
+	// 昵称
+	Nickname string `json:"nickname"`
+	// 性别，`male` 或 `female` 或 `unknown`
+	Sex SexType `json:"sex"`
+	// 年龄
+	Age int64 `json:"age"`
+	// 备注名
+	Remark string `json:"remark"`
 }
 
 // GetMsgRequest 表示 get_msg API 的请求参数
@@ -83,13 +93,13 @@ type GetMsgResponse struct {
 	// 发送时间
 	Time int64 `json:"time"`
 	// 消息类型，同 [消息事件](../event/message.md)
-	MessageType string `json:"message_type"`
+	MessageType MessageType `json:"message_type"`
 	// 消息 ID
 	MessageId int64 `json:"message_id"`
 	// 消息真实 ID
 	RealId int64 `json:"real_id"`
 	// 发送人信息，同 [消息事件](../event/message.md)
-	Sender *map[string]interface{} `json:"sender"`
+	Sender *BaseUser `json:"sender"`
 	// 消息内容
 	// 可以是字符串 (CQ 码格式) 或消息段数组
 	Message *MessageValue `json:"message"`
@@ -119,14 +129,7 @@ type SendLikeRequest struct {
 }
 
 // SendLikeResponse 表示 send_like API 的响应数据
-type SendLikeResponse struct {
-	// 群号
-	GroupId int64 `json:"group_id"`
-	// 要踢的 QQ 号
-	UserId int64 `json:"user_id"`
-	// 拒绝此人的加群请求 | 可能的值: false
-	RejectAddRequest bool `json:"reject_add_request"`
-}
+type SendLikeResponse struct{}
 
 // SetGroupKickRequest 表示 set_group_kick API 的请求参数
 // 对应文档: 群组踢人
@@ -140,14 +143,7 @@ type SetGroupKickRequest struct {
 }
 
 // SetGroupKickResponse 表示 set_group_kick API 的响应数据
-type SetGroupKickResponse struct {
-	// 群号
-	GroupId int64 `json:"group_id"`
-	// 要禁言的 QQ 号
-	UserId int64 `json:"user_id"`
-	// 禁言时长，单位秒，0 表示取消禁言 | 可能的值: 30 * 60
-	Duration int64 `json:"duration"`
-}
+type SetGroupKickResponse struct{}
 
 // SetGroupBanRequest 表示 set_group_ban API 的请求参数
 // 对应文档: 群组单人禁言
@@ -161,16 +157,7 @@ type SetGroupBanRequest struct {
 }
 
 // SetGroupBanResponse 表示 set_group_ban API 的响应数据
-type SetGroupBanResponse struct {
-	// 群号
-	GroupId int64 `json:"group_id"`
-	// 可选，要禁言的匿名用户对象（群消息上报的 `anonymous` 字段）
-	Anonymous *map[string]interface{} `json:"anonymous"`
-	// 可选，要禁言的匿名用户的 flag（需从群消息上报的数据中获得）
-	AnonymousFlag string `json:"anonymous_flag"`
-	// 禁言时长，单位秒，无法取消匿名用户禁言 | 可能的值: 30 * 60
-	Duration int64 `json:"duration"`
-}
+type SetGroupBanResponse struct{}
 
 // SetGroupAnonymousBanRequest 表示 set_group_anonymous_ban API 的请求参数
 // 对应文档: 群组匿名用户禁言
@@ -178,20 +165,15 @@ type SetGroupAnonymousBanRequest struct {
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 可选，要禁言的匿名用户对象（群消息上报的 `anonymous` 字段）
-	Anonymous *map[string]interface{} `json:"anonymous"`
+	Anonymous any `json:"anonymous,omitempty"`
 	// 可选，要禁言的匿名用户的 flag（需从群消息上报的数据中获得）
-	AnonymousFlag string `json:"anonymous_flag"`
+	AnonymousFlag string `json:"anonymous_flag,omitempty"`
 	// 禁言时长，单位秒，无法取消匿名用户禁言 | 可能的值: 30 * 60
 	Duration int64 `json:"duration"`
 }
 
 // SetGroupAnonymousBanResponse 表示 set_group_anonymous_ban API 的响应数据
-type SetGroupAnonymousBanResponse struct {
-	// 群号
-	GroupId int64 `json:"group_id"`
-	// 是否禁言 | 可能的值: true
-	Enable bool `json:"enable"`
-}
+type SetGroupAnonymousBanResponse struct{}
 
 // SetGroupWholeBanRequest 表示 set_group_whole_ban API 的请求参数
 // 对应文档: 群组全员禁言
@@ -203,14 +185,7 @@ type SetGroupWholeBanRequest struct {
 }
 
 // SetGroupWholeBanResponse 表示 set_group_whole_ban API 的响应数据
-type SetGroupWholeBanResponse struct {
-	// 群号
-	GroupId int64 `json:"group_id"`
-	// 要设置管理员的 QQ 号
-	UserId int64 `json:"user_id"`
-	// true 为设置，false 为取消 | 可能的值: true
-	Enable bool `json:"enable"`
-}
+type SetGroupWholeBanResponse struct{}
 
 // SetGroupAdminRequest 表示 set_group_admin API 的请求参数
 // 对应文档: 群组设置管理员
@@ -224,12 +199,7 @@ type SetGroupAdminRequest struct {
 }
 
 // SetGroupAdminResponse 表示 set_group_admin API 的响应数据
-type SetGroupAdminResponse struct {
-	// 群号
-	GroupId int64 `json:"group_id"`
-	// 是否允许匿名聊天 | 可能的值: true
-	Enable bool `json:"enable"`
-}
+type SetGroupAdminResponse struct{}
 
 // SetGroupAnonymousRequest 表示 set_group_anonymous API 的请求参数
 // 对应文档: 群组匿名
@@ -241,14 +211,7 @@ type SetGroupAnonymousRequest struct {
 }
 
 // SetGroupAnonymousResponse 表示 set_group_anonymous API 的响应数据
-type SetGroupAnonymousResponse struct {
-	// 群号
-	GroupId int64 `json:"group_id"`
-	// 要设置的 QQ 号
-	UserId int64 `json:"user_id"`
-	// 群名片内容，不填或空字符串表示删除群名片 | 默认值: 空
-	Card string `json:"card,omitempty"`
-}
+type SetGroupAnonymousResponse struct{}
 
 // SetGroupCardRequest 表示 set_group_card API 的请求参数
 // 对应文档: 设置群名片（群备注）
@@ -262,12 +225,7 @@ type SetGroupCardRequest struct {
 }
 
 // SetGroupCardResponse 表示 set_group_card API 的响应数据
-type SetGroupCardResponse struct {
-	// 群号
-	GroupId int64 `json:"group_id"`
-	// 新群名
-	GroupName string `json:"group_name"`
-}
+type SetGroupCardResponse struct{}
 
 // SetGroupNameRequest 表示 set_group_name API 的请求参数
 // 对应文档: 设置群名
@@ -279,12 +237,7 @@ type SetGroupNameRequest struct {
 }
 
 // SetGroupNameResponse 表示 set_group_name API 的响应数据
-type SetGroupNameResponse struct {
-	// 群号
-	GroupId int64 `json:"group_id"`
-	// 是否解散，如果登录号是群主，则仅在此项为 true 时能够解散 | 可能的值: false
-	IsDismiss bool `json:"is_dismiss"`
-}
+type SetGroupNameResponse struct{}
 
 // SetGroupLeaveRequest 表示 set_group_leave API 的请求参数
 // 对应文档: 退出群组
@@ -296,16 +249,7 @@ type SetGroupLeaveRequest struct {
 }
 
 // SetGroupLeaveResponse 表示 set_group_leave API 的响应数据
-type SetGroupLeaveResponse struct {
-	// 群号
-	GroupId int64 `json:"group_id"`
-	// 要设置的 QQ 号
-	UserId int64 `json:"user_id"`
-	// 专属头衔，不填或空字符串表示删除专属头衔 | 默认值: 空
-	SpecialTitle string `json:"special_title,omitempty"`
-	// 专属头衔有效期，单位秒，-1 表示永久，不过此项似乎没有效果，可能是只有某些特殊的时间长度有效，有待测试 | 可能的值: -1
-	Duration int64 `json:"duration"`
-}
+type SetGroupLeaveResponse struct{}
 
 // SetGroupSpecialTitleRequest 表示 set_group_special_title API 的请求参数
 // 对应文档: 设置群组专属头衔
@@ -321,14 +265,7 @@ type SetGroupSpecialTitleRequest struct {
 }
 
 // SetGroupSpecialTitleResponse 表示 set_group_special_title API 的响应数据
-type SetGroupSpecialTitleResponse struct {
-	// 加好友请求的 flag（需从上报的数据中获得）
-	Flag string `json:"flag"`
-	// 是否同意请求 | 可能的值: true
-	Approve bool `json:"approve"`
-	// 添加后的好友备注（仅在同意时有效） | 默认值: 空
-	Remark string `json:"remark,omitempty"`
-}
+type SetGroupSpecialTitleResponse struct{}
 
 // SetFriendAddRequestRequest 表示 set_friend_add_request API 的请求参数
 // 对应文档: 处理加好友请求
@@ -342,16 +279,7 @@ type SetFriendAddRequestRequest struct {
 }
 
 // SetFriendAddRequestResponse 表示 set_friend_add_request API 的响应数据
-type SetFriendAddRequestResponse struct {
-	// 加群请求的 flag（需从上报的数据中获得）
-	Flag string `json:"flag"`
-	// `add` 或 `invite`，请求类型（需要和上报消息中的 `sub_type` 字段相符）
-	SubType string `json:"sub_type"`
-	// 是否同意请求／邀请 | 可能的值: true
-	Approve bool `json:"approve"`
-	// 拒绝理由（仅在拒绝时有效） | 默认值: 空
-	Reason string `json:"reason,omitempty"`
-}
+type SetFriendAddRequestResponse struct{}
 
 // SetGroupAddRequestRequest 表示 set_group_add_request API 的请求参数
 // 对应文档: 处理加群请求／邀请
@@ -359,7 +287,7 @@ type SetGroupAddRequestRequest struct {
 	// 加群请求的 flag（需从上报的数据中获得）
 	Flag string `json:"flag"`
 	// `add` 或 `invite`，请求类型（需要和上报消息中的 `sub_type` 字段相符）
-	SubType string `json:"sub_type"`
+	SubType SetGroupAddRequestSubType `json:"sub_type"`
 	// 是否同意请求／邀请 | 可能的值: true
 	Approve bool `json:"approve"`
 	// 拒绝理由（仅在拒绝时有效） | 默认值: 空
@@ -367,21 +295,11 @@ type SetGroupAddRequestRequest struct {
 }
 
 // SetGroupAddRequestResponse 表示 set_group_add_request API 的响应数据
-type SetGroupAddRequestResponse struct {
-	// QQ 号
-	UserId int64 `json:"user_id"`
-	// QQ 昵称
-	Nickname string `json:"nickname"`
-}
+type SetGroupAddRequestResponse struct{}
 
 // GetLoginInfoRequest 表示 get_login_info API 的请求参数
 // 对应文档: 获取登录号信息
-type GetLoginInfoRequest struct {
-	// QQ 号
-	UserId int64 `json:"user_id"`
-	// QQ 昵称
-	Nickname string `json:"nickname"`
-}
+type GetLoginInfoRequest struct{}
 
 // GetLoginInfoResponse 表示 get_login_info API 的响应数据
 type GetLoginInfoResponse struct {
@@ -407,24 +325,19 @@ type GetStrangerInfoResponse struct {
 	// 昵称
 	Nickname string `json:"nickname"`
 	// 性别，`male` 或 `female` 或 `unknown`
-	Sex string `json:"sex"`
+	Sex SexType `json:"sex"`
 	// 年龄
 	Age int64 `json:"age"`
 }
 
 // GetFriendListRequest 表示 get_friend_list API 的请求参数
 // 对应文档: 获取好友列表
-type GetFriendListRequest struct {
-	// QQ 号
-	UserId int64 `json:"user_id"`
-	// 昵称
-	Nickname string `json:"nickname"`
-	// 备注名
-	Remark string `json:"remark"`
-}
+type GetFriendListRequest struct{}
 
 // GetFriendListResponse 表示 get_friend_list API 的响应数据
-type GetFriendListResponse struct {
+type GetFriendListResponse []*GetFriendListResponseItem
+
+type GetFriendListResponseItem struct {
 	// QQ 号
 	UserId int64 `json:"user_id"`
 	// 昵称
@@ -456,24 +369,10 @@ type GetGroupInfoResponse struct {
 
 // GetGroupListRequest 表示 get_group_list API 的请求参数
 // 对应文档: 获取群列表
-type GetGroupListRequest struct {
-	// 群号
-	GroupId int64 `json:"group_id"`
-	// QQ 号
-	UserId int64 `json:"user_id"`
-	// 是否不使用缓存（使用缓存可能更新不及时，但响应更快） | 可能的值: false
-	NoCache bool `json:"no_cache"`
-}
+type GetGroupListRequest struct{}
 
 // GetGroupListResponse 表示 get_group_list API 的响应数据
-type GetGroupListResponse struct {
-	// 群号
-	GroupId int64 `json:"group_id"`
-	// QQ 号
-	UserId int64 `json:"user_id"`
-	// 是否不使用缓存（使用缓存可能更新不及时，但响应更快） | 可能的值: false
-	NoCache bool `json:"no_cache"`
-}
+type GetGroupListResponse []GetGroupInfoResponse
 
 // GetGroupMemberInfoRequest 表示 get_group_member_info API 的请求参数
 // 对应文档: 获取群成员信息
@@ -497,7 +396,7 @@ type GetGroupMemberInfoResponse struct {
 	// 群名片／备注
 	Card string `json:"card"`
 	// 性别，`male` 或 `female` 或 `unknown`
-	Sex string `json:"sex"`
+	Sex SexType `json:"sex"`
 	// 年龄
 	Age int64 `json:"age"`
 	// 地区
@@ -509,7 +408,7 @@ type GetGroupMemberInfoResponse struct {
 	// 成员等级
 	Level string `json:"level"`
 	// 角色，`owner` 或 `admin` 或 `member`
-	Role string `json:"role"`
+	Role GroupMemberRoleType `json:"role"`
 	// 是否不良记录成员
 	Unfriendly bool `json:"unfriendly"`
 	// 专属头衔
@@ -528,12 +427,8 @@ type GetGroupMemberListRequest struct {
 }
 
 // GetGroupMemberListResponse 表示 get_group_member_list API 的响应数据
-type GetGroupMemberListResponse struct {
-	// 群号
-	GroupId int64 `json:"group_id"`
-	// 要获取的群荣誉类型，可传入 `talkative` `performer` `legend` `strong_newbie` `emotion` 以分别获取单个类型的群荣誉数据，或传入 `all` 获取所有数据
-	Type string `json:"type"`
-}
+// 但对于同一个群组的同一个成员，获取列表时和获取单独的成员信息时，某些字段可能有所不同，例如 `area`、`title` 等字段在获取列表时无法获得，具体应以单独的成员信息为准。
+type GetGroupMemberListResponse []GetGroupMemberInfoResponse
 
 // GetGroupHonorInfoRequest 表示 get_group_honor_info API 的请求参数
 // 对应文档: 获取群荣誉信息
@@ -541,7 +436,7 @@ type GetGroupHonorInfoRequest struct {
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 要获取的群荣誉类型，可传入 `talkative` `performer` `legend` `strong_newbie` `emotion` 以分别获取单个类型的群荣誉数据，或传入 `all` 获取所有数据
-	Type string `json:"type"`
+	Type GroupHonorType `json:"type"`
 }
 
 // GetGroupHonorInfoResponse 表示 get_group_honor_info API 的响应数据
@@ -549,17 +444,39 @@ type GetGroupHonorInfoResponse struct {
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 当前龙王，仅 `type` 为 `talkative` 或 `all` 时有数据
-	CurrentTalkative *map[string]interface{} `json:"current_talkative"`
+	CurrentTalkative *GroupHonorInfoCurrentTalkative `json:"current_talkative"`
 	// 历史龙王，仅 `type` 为 `talkative` 或 `all` 时有数据
-	TalkativeList *[]interface{} `json:"talkative_list"`
+	TalkativeList []*GroupHonorInfoListItem `json:"talkative_list"`
 	// 群聊之火，仅 `type` 为 `performer` 或 `all` 时有数据
-	PerformerList *[]interface{} `json:"performer_list"`
+	PerformerList []*GroupHonorInfoListItem `json:"performer_list"`
 	// 群聊炽焰，仅 `type` 为 `legend` 或 `all` 时有数据
-	LegendList *[]interface{} `json:"legend_list"`
+	LegendList []*GroupHonorInfoListItem `json:"legend_list"`
 	// 冒尖小春笋，仅 `type` 为 `strong_newbie` 或 `all` 时有数据
-	StrongNewbieList *[]interface{} `json:"strong_newbie_list"`
+	StrongNewbieList []*GroupHonorInfoListItem `json:"strong_newbie_list"`
 	// 快乐之源，仅 `type` 为 `emotion` 或 `all` 时有数据
-	EmotionList *[]interface{} `json:"emotion_list"`
+	EmotionList []*GroupHonorInfoListItem `json:"emotion_list"`
+}
+
+type GroupHonorInfoCurrentTalkative struct {
+	// QQ 号
+	UserId int64 `json:"user_id"`
+	// 昵称
+	Nickname string `json:"nickname"`
+	// 头像 URL
+	Avatar string `json:"avatar"`
+	// 持续天数
+	DayCount int32 `json:"day_count"`
+}
+
+type GroupHonorInfoListItem struct {
+	// QQ 号
+	UserId int64 `json:"user_id"`
+	// 昵称
+	Nickname string `json:"nickname"`
+	// 头像 URL
+	Avatar string `json:"avatar"`
+	// 荣誉描述
+	Description string `json:"description"`
 }
 
 // GetCookiesRequest 表示 get_cookies API 的请求参数
@@ -577,10 +494,7 @@ type GetCookiesResponse struct {
 
 // GetCsrfTokenRequest 表示 get_csrf_token API 的请求参数
 // 对应文档: 获取 CSRF Token
-type GetCsrfTokenRequest struct {
-	// CSRF Token
-	Token int64 `json:"token"`
-}
+type GetCsrfTokenRequest struct{}
 
 // GetCsrfTokenResponse 表示 get_csrf_token API 的响应数据
 type GetCsrfTokenResponse struct {
@@ -609,7 +523,7 @@ type GetRecordRequest struct {
 	// 收到的语音文件名（消息段的 `file` 参数），如 `0B38145AA44505000B38145AA4450500.silk`
 	File string `json:"file"`
 	// 要转换到的格式，目前支持 `mp3`、`amr`、`wma`、`m4a`、`spx`、`ogg`、`wav`、`flac`
-	OutFormat string `json:"out_format"`
+	OutFormat GetRecordOutputFormat `json:"out_format"`
 }
 
 // GetRecordResponse 表示 get_record API 的响应数据
@@ -633,10 +547,7 @@ type GetImageResponse struct {
 
 // CanSendImageRequest 表示 can_send_image API 的请求参数
 // 对应文档: 检查是否可以发送图片
-type CanSendImageRequest struct {
-	// 是或否
-	Yes bool `json:"yes"`
-}
+type CanSendImageRequest struct{}
 
 // CanSendImageResponse 表示 can_send_image API 的响应数据
 type CanSendImageResponse struct {
@@ -646,10 +557,7 @@ type CanSendImageResponse struct {
 
 // CanSendRecordRequest 表示 can_send_record API 的请求参数
 // 对应文档: 检查是否可以发送语音
-type CanSendRecordRequest struct {
-	// 是或否
-	Yes bool `json:"yes"`
-}
+type CanSendRecordRequest struct{}
 
 // CanSendRecordResponse 表示 can_send_record API 的响应数据
 type CanSendRecordResponse struct {
@@ -659,12 +567,7 @@ type CanSendRecordResponse struct {
 
 // GetStatusRequest 表示 get_status API 的请求参数
 // 对应文档: 获取运行状态
-type GetStatusRequest struct {
-	// 当前 QQ 在线，`null` 表示无法查询到在线状态
-	Online bool `json:"online"`
-	// 状态符合预期，意味着各模块正常运行、功能正常，且 QQ 在线
-	Good bool `json:"good"`
-}
+type GetStatusRequest struct{}
 
 // GetStatusResponse 表示 get_status API 的响应数据
 type GetStatusResponse struct {
@@ -672,18 +575,12 @@ type GetStatusResponse struct {
 	Online bool `json:"online"`
 	// 状态符合预期，意味着各模块正常运行、功能正常，且 QQ 在线
 	Good bool `json:"good"`
+	// TODO 其他状态信息，视 OneBot 实现而定
 }
 
 // GetVersionInfoRequest 表示 get_version_info API 的请求参数
 // 对应文档: 获取版本信息
-type GetVersionInfoRequest struct {
-	// 应用标识，如 `mirai-native`
-	AppName string `json:"app_name"`
-	// 应用版本，如 `1.2.3`
-	AppVersion string `json:"app_version"`
-	// OneBot 标准版本，如 `v11`
-	ProtocolVersion string `json:"protocol_version"`
-}
+type GetVersionInfoRequest struct{}
 
 // GetVersionInfoResponse 表示 get_version_info API 的响应数据
 type GetVersionInfoResponse struct {
@@ -693,6 +590,7 @@ type GetVersionInfoResponse struct {
 	AppVersion string `json:"app_version"`
 	// OneBot 标准版本，如 `v11`
 	ProtocolVersion string `json:"protocol_version"`
+	// TODO 其他状态信息，视 OneBot 实现而定
 }
 
 // SetRestartRequest 表示 set_restart API 的请求参数
@@ -703,16 +601,11 @@ type SetRestartRequest struct {
 }
 
 // SetRestartResponse 表示 set_restart API 的响应数据
-type SetRestartResponse struct {
-	// 无响应数据
-}
+type SetRestartResponse struct{}
 
 // CleanCacheRequest 表示 clean_cache API 的请求参数
 // 对应文档: 清理缓存
-type CleanCacheRequest struct {
-}
+type CleanCacheRequest struct{}
 
 // CleanCacheResponse 表示 clean_cache API 的响应数据
-type CleanCacheResponse struct {
-	// 无响应数据
-}
+type CleanCacheResponse struct{}
