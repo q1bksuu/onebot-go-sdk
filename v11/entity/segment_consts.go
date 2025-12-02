@@ -45,7 +45,7 @@ const (
 	ContactSegmentTypeGroup ContactSegmentType = "group"
 )
 
-// PokeSegment enums.
+// PokeSegment enums. from: https://github.com/mamoe/mirai/blob/f5eefae7ecee84d18a66afce3f89b89fe1584b78/mirai-core/src/commonMain/kotlin/net.mamoe.mirai/message/data/HummerMessage.kt#L49
 
 func PokeSegmentPoke() *PokeSegment        { return &PokeSegment{"戳一戳", 1, -1} }     // 戳一戳
 func PokeSegmentShowLove() *PokeSegment    { return &PokeSegment{"比心", 2, -1} }      // 比心
