@@ -1,19 +1,18 @@
 package entity
 
 import (
-	"bytes"
 	"encoding/json"
 )
 
 type SegmentData interface {
-	SegmentType() SegmentType
+	SegmentType() SegmentDataType
 }
 
 // Segment 表示一个通用消息段
 // 所有具体的消息段类型都应该能转换为此类型
 type Segment struct {
-	Type SegmentType `json:"type"`
-	Data SegmentData `json:"data"`
+	Type SegmentDataType `json:"type"`
+	Data SegmentData     `json:"data"`
 }
 
 func NewSegment(data SegmentData) *Segment {
@@ -23,86 +22,38 @@ func NewSegment(data SegmentData) *Segment {
 	}
 }
 
-// MessageValue 表示 OneBot message 字段的值
-// 可以是纯文本字符串或消息段数组
-type MessageValue struct {
-	// 如果 Type 为 "string"，则使用 StringValue
-	// 如果 Type 为 "array"，则使用 ArrayValue
-	Type        MessageValueType `json:"-"`
-	StringValue string           `json:"-"`
-	ArrayValue  []*Segment       `json:"-"`
-}
-
-// UnmarshalJSON 实现 json.Unmarshaler 接口
-// 用于在反序列化时自动选择正确的类型
-func (m *MessageValue) UnmarshalJSON(data []byte) error {
-	// 首先尝试作为字符串解析
-	var str string
-	if bytes.HasPrefix(data, []byte{'"'}) {
-		if err := json.Unmarshal(data, &str); err == nil {
-			m.Type = MessageValueTypeString
-			m.StringValue = str
-			return nil
-		}
-	}
-
-	// 然后尝试作为数组解析
-	var arr []*Segment
-	if bytes.HasPrefix(data, []byte{'['}) {
-		if err := json.Unmarshal(data, &arr); err == nil {
-			m.Type = MessageValueTypeArray
-			m.ArrayValue = arr
-			return nil
-		}
-	}
-
-	return nil
-}
-
-// MarshalJSON 实现 json.Marshaler 接口
-// 用于在序列化时正确地输出值
-func (m *MessageValue) MarshalJSON() ([]byte, error) {
-	if m.Type == MessageValueTypeString {
-		return json.Marshal(m.StringValue)
-	}
-	if m.Type == MessageValueTypeArray {
-		return json.Marshal(m.ArrayValue)
-	}
-	return []byte{'n', 'u', 'l', 'l'}, nil
-}
-
-// TextSegment 纯文本
+// TextSegmentData 纯文本
 // 消息段类型: text
 // 支持发送、支持接收
-type TextSegment struct {
+type TextSegmentData struct {
 	// 纯文本内容
 	Text string `json:"text,omitempty"`
 }
 
-func (s *TextSegment) SegmentType() SegmentType {
-	return SegmentTypeText
+func (s *TextSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeText
 }
 
-// FaceSegment QQ 表情
+// FaceSegmentData QQ 表情
 // 消息段类型: face
 // 支持发送、支持接收
-type FaceSegment struct {
+type FaceSegmentData struct {
 	// QQ 表情 ID | 可能的值: 见 [QQ 表情 ID 表](https://github.com/richardchien/coolq-http-api/wiki/%E8%A1%A8%E6%83%85-CQ-%E7%A0%81-ID-%E8%A1%A8)
 	Id string `json:"id,omitempty"`
 }
 
-func (s *FaceSegment) SegmentType() SegmentType {
-	return SegmentTypeFace
+func (s *FaceSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeFace
 }
 
-// ImageSegment 图片
+// ImageSegmentData 图片
 // 消息段类型: image
 // 支持发送、支持接收
-type ImageSegment struct {
+type ImageSegmentData struct {
 	// 图片文件名
 	File string `json:"file,omitempty"`
 	// 图片类型，`flash` 表示闪照，无此参数表示普通图片 | 可能的值: flash
-	Type ImageSegmentType `json:"type,omitempty"`
+	Type ImageSegmentDataType `json:"type,omitempty"`
 	// 图片 URL
 	Url string `json:"url,omitempty"`
 	// 只在通过网络 URL 发送时有效，表示是否使用已缓存的文件，默认 `1`
@@ -113,14 +64,14 @@ type ImageSegment struct {
 	Timeout int64 `json:"timeout,omitempty"`
 }
 
-func (s *ImageSegment) SegmentType() SegmentType {
-	return SegmentTypeImage
+func (s *ImageSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeImage
 }
 
-// RecordSegment 语音
+// RecordSegmentData 语音
 // 消息段类型: record
 // 支持发送、支持接收
-type RecordSegment struct {
+type RecordSegmentData struct {
 	// 语音文件名
 	File string `json:"file,omitempty"`
 	// 发送时可选，默认 `0`，设置为 `1` 表示变声 | 可能的值: `0` `1`
@@ -135,14 +86,14 @@ type RecordSegment struct {
 	Timeout int64 `json:"timeout,omitempty"`
 }
 
-func (s *RecordSegment) SegmentType() SegmentType {
-	return SegmentTypeRecord
+func (s *RecordSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeRecord
 }
 
-// VideoSegment 短视频
+// VideoSegmentData 短视频
 // 消息段类型: video
 // 支持发送、支持接收
-type VideoSegment struct {
+type VideoSegmentData struct {
 	// 视频文件名
 	File string `json:"file,omitempty"`
 	// 视频 URL
@@ -155,60 +106,60 @@ type VideoSegment struct {
 	Timeout int64 `json:"timeout,omitempty"`
 }
 
-func (s *VideoSegment) SegmentType() SegmentType {
-	return SegmentTypeVideo
+func (s *VideoSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeVideo
 }
 
-// AtSegment @某人
+// AtSegmentData @某人
 // 消息段类型: at
 // 支持发送、支持接收
-type AtSegment struct {
+type AtSegmentData struct {
 	// @的 QQ 号，`all` 表示全体成员 | 可能的值: QQ 号, all
 	Qq string `json:"qq,omitempty"`
 }
 
-func (s *AtSegment) SegmentType() SegmentType {
-	return SegmentTypeAt
+func (s *AtSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeAt
 }
 
-// RpsSegment 猜拳魔法表情
+// RpsSegmentData 猜拳魔法表情
 // 消息段类型: rps
 // 支持发送、支持接收
-type RpsSegment struct {
+type RpsSegmentData struct {
 	// 无参数
 }
 
-func (s *RpsSegment) SegmentType() SegmentType {
-	return SegmentTypeRps
+func (s *RpsSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeRps
 }
 
-// DiceSegment 掷骰子魔法表情
+// DiceSegmentData 掷骰子魔法表情
 // 消息段类型: dice
 // 支持发送、支持接收
-type DiceSegment struct {
+type DiceSegmentData struct {
 	// 无参数
 }
 
-func (s *DiceSegment) SegmentType() SegmentType {
-	return SegmentTypeDice
+func (s *DiceSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeDice
 }
 
-// ShakeSegment 窗口抖动（戳一戳）
+// ShakeSegmentData 窗口抖动（戳一戳）
 // 消息段类型: shake
 // 支持发送
-type ShakeSegment struct {
+type ShakeSegmentData struct {
 	// 无参数
 }
 
-func (s *ShakeSegment) SegmentType() SegmentType {
-	return SegmentTypeShake
+func (s *ShakeSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeShake
 }
 
-// PokeSegment 戳一戳
+// PokeSegmentData 戳一戳
 // 消息段类型: poke
 // 支持发送、支持接收
-type PokeSegment struct {
-	// 类型 | 可能的值: 见 segment_consts.go 中的 PokeSegment enums.
+type PokeSegmentData struct {
+	// 类型 | 可能的值: 见 segment_consts.go 中的 PokeSegmentData enums.
 	Type string `json:"type,omitempty"`
 	// ID | 可能的值: 同上
 	Id int64 `json:"id,omitempty"`
@@ -216,26 +167,26 @@ type PokeSegment struct {
 	Name int64 `json:"name,omitempty"`
 }
 
-func (s *PokeSegment) SegmentType() SegmentType {
-	return SegmentTypePoke
+func (s *PokeSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypePoke
 }
 
-// AnonymousSegment 匿名发消息
+// AnonymousSegmentData 匿名发消息
 // 消息段类型: anonymous
 // 支持发送
-type AnonymousSegment struct {
+type AnonymousSegmentData struct {
 	// 可选，表示无法匿名时是否继续发送 | 可能的值: `0`, `1`
 	Ignore *int `json:"ignore,omitempty"`
 }
 
-func (s *AnonymousSegment) SegmentType() SegmentType {
-	return SegmentTypeAnonymous
+func (s *AnonymousSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeAnonymous
 }
 
-// ShareSegment 链接分享
+// ShareSegmentData 链接分享
 // 消息段类型: share
 // 支持发送、支持接收
-type ShareSegment struct {
+type ShareSegmentData struct {
 	// URL
 	Url string `json:"url,omitempty"`
 	// 标题
@@ -246,28 +197,28 @@ type ShareSegment struct {
 	Image *string `json:"image,omitempty"`
 }
 
-func (s *ShareSegment) SegmentType() SegmentType {
-	return SegmentTypeShare
+func (s *ShareSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeShare
 }
 
-// ContactSegment 推荐好友
+// ContactSegmentData 推荐好友
 // 消息段类型: contact
 // 支持发送、支持接收
-type ContactSegment struct {
+type ContactSegmentData struct {
 	// 推荐好友 | 可能的值: qq, group
-	Type ContactSegmentType `json:"type,omitempty"`
+	Type ContactSegmentDataType `json:"type,omitempty"`
 	// 被推荐人的 QQ 号/群号
 	Id string `json:"id,omitempty"`
 }
 
-func (s *ContactSegment) SegmentType() SegmentType {
-	return SegmentTypeContact
+func (s *ContactSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeContact
 }
 
-// LocationSegment 位置
+// LocationSegmentData 位置
 // 消息段类型: location
 // 支持发送、支持接收
-type LocationSegment struct {
+type LocationSegmentData struct {
 	// 纬度
 	Lat string `json:"lat,omitempty"`
 	// 经度
@@ -278,14 +229,14 @@ type LocationSegment struct {
 	Content *string `json:"content,omitempty"`
 }
 
-func (s *LocationSegment) SegmentType() SegmentType {
-	return SegmentTypeLocation
+func (s *LocationSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeLocation
 }
 
-// MusicSegment 音乐自定义分享
+// MusicSegmentData 音乐自定义分享
 // 消息段类型: music
 // 支持发送
-type MusicSegment struct {
+type MusicSegmentData struct {
 	// 表示使用 QQ 音乐、网易云音乐、虾米音乐或音乐自定义分享
 	Type string `json:"type,omitempty"`
 
@@ -305,32 +256,32 @@ type MusicSegment struct {
 	Image *string `json:"image,omitempty"`
 }
 
-func (s *MusicSegment) SegmentType() SegmentType {
-	return SegmentTypeMusic
+func (s *MusicSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeMusic
 }
 
-// ReplySegment 回复
+// ReplySegmentData 回复
 // 消息段类型: reply
 // 支持发送、支持接收
-type ReplySegment struct {
+type ReplySegmentData struct {
 	// 回复时引用的消息 ID
 	Id string `json:"id,omitempty"`
 }
 
-func (s *ReplySegment) SegmentType() SegmentType {
-	return SegmentTypeReply
+func (s *ReplySegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeReply
 }
 
-// ForwardSegment 合并转发
+// ForwardSegmentData 合并转发
 // 消息段类型: forward
 // 支持接收
-type ForwardSegment struct {
+type ForwardSegmentData struct {
 	// 合并转发 ID，需通过 get_forward_msg-获取合并转发消息 获取具体内容
 	Id string `json:"id,omitempty"`
 }
 
-func (s *ForwardSegment) SegmentType() SegmentType {
-	return SegmentTypeForward
+func (s *ForwardSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeForward
 }
 
 // NodeSegmentId 合并转发节点
@@ -341,14 +292,14 @@ type NodeSegmentId struct {
 	Id string `json:"id,omitempty"`
 }
 
-func (s *NodeSegmentId) SegmentType() SegmentType {
-	return SegmentTypeNode
+func (s *NodeSegmentId) SegmentType() SegmentDataType {
+	return SegmentDataTypeNode
 }
 
-// NodeSegment 合并转发自定义节点
+// NodeSegmentData 合并转发自定义节点
 // 消息段类型: node
 // 支持发送、支持接收
-type NodeSegment struct {
+type NodeSegmentData struct {
 	// 发送者 QQ 号
 	UserId string `json:"user_id,omitempty"`
 	// 发送者昵称
@@ -357,30 +308,30 @@ type NodeSegment struct {
 	Content *MessageValue `json:"content,omitempty"`
 }
 
-func (s *NodeSegment) SegmentType() SegmentType {
-	return SegmentTypeNode
+func (s *NodeSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeNode
 }
 
-// XmlSegment XML 消息
+// XmlSegmentData XML 消息
 // 消息段类型: xml
 // 支持发送、支持接收
-type XmlSegment struct {
+type XmlSegmentData struct {
 	// XML 内容
 	Data string `json:"data,omitempty"`
 }
 
-func (s *XmlSegment) SegmentType() SegmentType {
-	return SegmentTypeXml
+func (s *XmlSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeXml
 }
 
-// JsonSegment JSON 消息
+// JsonSegmentData JSON 消息
 // 消息段类型: json
 // 支持发送、支持接收
-type JsonSegment struct {
+type JsonSegmentData struct {
 	// JSON 内容
 	Data json.RawMessage `json:"data,omitempty"`
 }
 
-func (s *JsonSegment) SegmentType() SegmentType {
-	return SegmentTypeJson
+func (s *JsonSegmentData) SegmentType() SegmentDataType {
+	return SegmentDataTypeJson
 }
