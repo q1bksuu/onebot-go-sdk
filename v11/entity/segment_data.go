@@ -55,9 +55,9 @@ type ImageSegmentData struct {
 	// 图片 URL
 	Url string `json:"url,omitempty"`
 	// 只在通过网络 URL 发送时有效，表示是否使用已缓存的文件，默认 `1`
-	Cache *int `json:"cache,omitempty"`
+	Cache *CacheFlag `json:"cache,omitempty"`
 	// 只在通过网络 URL 发送时有效，表示是否通过代理下载文件（需通过环境变量或配置文件配置代理），默认 `1`
-	Proxy *int `json:"proxy,omitempty"`
+	Proxy *ProxyFlag `json:"proxy,omitempty"`
 	// 只在通过网络 URL 发送时有效，单位秒，表示下载网络文件的超时时间，默认不超时
 	Timeout *int64 `json:"timeout,omitempty"`
 }
@@ -73,13 +73,13 @@ type RecordSegmentData struct {
 	// 语音文件名
 	File string `json:"file,omitempty"`
 	// 发送时可选，默认 `0`，设置为 `1` 表示变声 | 可能的值: `0` `1`
-	Magic *int `json:"magic,omitempty"`
+	Magic *MagicFlag `json:"magic,omitempty"`
 	// 语音 URL
 	Url string `json:"url,omitempty"`
 	// 只在通过网络 URL 发送时有效，表示是否使用已缓存的文件，默认 `1`
-	Cache *int `json:"cache,omitempty"`
+	Cache *CacheFlag `json:"cache,omitempty"`
 	// 只在通过网络 URL 发送时有效，表示是否通过代理下载文件（需通过环境变量或配置文件配置代理），默认 `1`
-	Proxy *int `json:"proxy,omitempty"`
+	Proxy *ProxyFlag `json:"proxy,omitempty"`
 	// 只在通过网络 URL 发送时有效，单位秒，表示下载网络文件的超时时间 ，默认不超时
 	Timeout *int64 `json:"timeout,omitempty"`
 }
@@ -97,9 +97,9 @@ type VideoSegmentData struct {
 	// 视频 URL
 	Url string `json:"url,omitempty"`
 	// 只在通过网络 URL 发送时有效，表示是否使用已缓存的文件，默认 `1`
-	Cache *int `json:"cache,omitempty"`
+	Cache *CacheFlag `json:"cache,omitempty"`
 	// 只在通过网络 URL 发送时有效，表示是否通过代理下载文件（需通过环境变量或配置文件配置代理），默认 `1`
-	Proxy *int `json:"proxy,omitempty"`
+	Proxy *ProxyFlag `json:"proxy,omitempty"`
 	// 只在通过网络 URL 发送时有效，单位秒，表示下载网络文件的超时时间 ，默认不超时
 	Timeout *int64 `json:"timeout,omitempty"`
 }
@@ -168,7 +168,7 @@ func (s *PokeSegmentData) SegmentType() SegmentDataType {
 // 支持发送
 type AnonymousSegmentData struct {
 	// 可选，表示无法匿名时是否继续发送 | 可能的值: `0`, `1`
-	Ignore *int `json:"ignore,omitempty"`
+	Ignore *IgnoreFlag `json:"ignore,omitempty"`
 }
 
 func (s *AnonymousSegmentData) SegmentType() SegmentDataType {
@@ -229,8 +229,8 @@ func (s *LocationSegmentData) SegmentType() SegmentDataType {
 // 消息段类型: music
 // 支持发送
 type MusicSegmentData struct {
-	// 表示使用 QQ 音乐、网易云音乐、虾米音乐或音乐自定义分享
-	Type string `json:"type,omitempty"`
+	// 表示使用 QQ 音乐、网易云音乐、虾米音乐或音乐自定义分享 | 可能的值: qq, 163, xm, custom
+	Type MusicType `json:"type,omitempty"`
 
 	// 歌曲 ID (使用 QQ 音乐、网易云音乐、虾米音乐)
 	Id string `json:"id,omitempty"`

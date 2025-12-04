@@ -39,6 +39,48 @@ const (
 	ContactSegmentDataTypeGroup ContactSegmentDataType = "group"
 )
 
+// CacheFlag 图片/语音/视频缓存标志位
+type CacheFlag int
+
+const (
+	CacheFlagNo  CacheFlag = 0 // 不使用已缓存的文件
+	CacheFlagYes CacheFlag = 1 // 使用已缓存的文件（默认）
+)
+
+// ProxyFlag 图片/语音/视频代理下载标志位
+type ProxyFlag int
+
+const (
+	ProxyFlagNo  ProxyFlag = 0 // 不通过代理下载文件
+	ProxyFlagYes ProxyFlag = 1 // 通过代理下载文件（默认）
+)
+
+// MagicFlag 语音变声标志位
+type MagicFlag int
+
+const (
+	MagicFlagNo  MagicFlag = 0 // 不变声
+	MagicFlagYes MagicFlag = 1 // 变声
+)
+
+// IgnoreFlag 匿名发消息标志位
+type IgnoreFlag int
+
+const (
+	IgnoreFlagNo  IgnoreFlag = 0 // 无法匿名时不继续发送
+	IgnoreFlagYes IgnoreFlag = 1 // 无法匿名时继续发送
+)
+
+// MusicType 音乐分享类型
+type MusicType string
+
+const (
+	MusicTypeQQ      MusicType = "qq"     // QQ 音乐
+	MusicTypeNetEase MusicType = "163"    // 网易云音乐
+	MusicTypeXiami   MusicType = "xm"     // 虾米音乐
+	MusicTypeCustom  MusicType = "custom" // 音乐自定义分享
+)
+
 // PokeSegmentData enums. from: https://github.com/mamoe/mirai/blob/f5eefae7ecee84d18a66afce3f89b89fe1584b78/mirai-core/src/commonMain/kotlin/net.mamoe.mirai/message/data/HummerMessage.kt#L49
 
 func PokeSegmentDataPoke() *PokeSegmentData        { return &PokeSegmentData{"戳一戳", 1, -1} }     // 戳一戳
