@@ -1,9 +1,7 @@
 package entity
 
-import (
-	"encoding/json"
-)
-
+// SegmentData 表示 OneBot 消息的数据片段
+// SegmentDataType 和数据片段唯一对应
 type SegmentData interface {
 	SegmentType() SegmentDataType
 }
@@ -61,7 +59,7 @@ type ImageSegmentData struct {
 	// 只在通过网络 URL 发送时有效，表示是否通过代理下载文件（需通过环境变量或配置文件配置代理），默认 `1`
 	Proxy *int `json:"proxy,omitempty"`
 	// 只在通过网络 URL 发送时有效，单位秒，表示下载网络文件的超时时间，默认不超时
-	Timeout int64 `json:"timeout,omitempty"`
+	Timeout *int64 `json:"timeout,omitempty"`
 }
 
 func (s *ImageSegmentData) SegmentType() SegmentDataType {
@@ -83,7 +81,7 @@ type RecordSegmentData struct {
 	// 只在通过网络 URL 发送时有效，表示是否通过代理下载文件（需通过环境变量或配置文件配置代理），默认 `1`
 	Proxy *int `json:"proxy,omitempty"`
 	// 只在通过网络 URL 发送时有效，单位秒，表示下载网络文件的超时时间 ，默认不超时
-	Timeout int64 `json:"timeout,omitempty"`
+	Timeout *int64 `json:"timeout,omitempty"`
 }
 
 func (s *RecordSegmentData) SegmentType() SegmentDataType {
@@ -103,7 +101,7 @@ type VideoSegmentData struct {
 	// 只在通过网络 URL 发送时有效，表示是否通过代理下载文件（需通过环境变量或配置文件配置代理），默认 `1`
 	Proxy *int `json:"proxy,omitempty"`
 	// 只在通过网络 URL 发送时有效，单位秒，表示下载网络文件的超时时间 ，默认不超时
-	Timeout int64 `json:"timeout,omitempty"`
+	Timeout *int64 `json:"timeout,omitempty"`
 }
 
 func (s *VideoSegmentData) SegmentType() SegmentDataType {
@@ -115,7 +113,7 @@ func (s *VideoSegmentData) SegmentType() SegmentDataType {
 // 支持发送、支持接收
 type AtSegmentData struct {
 	// @的 QQ 号，`all` 表示全体成员 | 可能的值: QQ 号, all
-	Qq string `json:"qq,omitempty"`
+	QQ string `json:"qq,omitempty"`
 }
 
 func (s *AtSegmentData) SegmentType() SegmentDataType {
@@ -125,9 +123,7 @@ func (s *AtSegmentData) SegmentType() SegmentDataType {
 // RpsSegmentData 猜拳魔法表情
 // 消息段类型: rps
 // 支持发送、支持接收
-type RpsSegmentData struct {
-	// 无参数
-}
+type RpsSegmentData struct{}
 
 func (s *RpsSegmentData) SegmentType() SegmentDataType {
 	return SegmentDataTypeRps
@@ -136,9 +132,7 @@ func (s *RpsSegmentData) SegmentType() SegmentDataType {
 // DiceSegmentData 掷骰子魔法表情
 // 消息段类型: dice
 // 支持发送、支持接收
-type DiceSegmentData struct {
-	// 无参数
-}
+type DiceSegmentData struct{}
 
 func (s *DiceSegmentData) SegmentType() SegmentDataType {
 	return SegmentDataTypeDice
@@ -147,9 +141,7 @@ func (s *DiceSegmentData) SegmentType() SegmentDataType {
 // ShakeSegmentData 窗口抖动（戳一戳）
 // 消息段类型: shake
 // 支持发送
-type ShakeSegmentData struct {
-	// 无参数
-}
+type ShakeSegmentData struct{}
 
 func (s *ShakeSegmentData) SegmentType() SegmentDataType {
 	return SegmentDataTypeShake
@@ -162,9 +154,9 @@ type PokeSegmentData struct {
 	// 类型 | 可能的值: 见 segment_consts.go 中的 PokeSegmentData enums.
 	Type string `json:"type,omitempty"`
 	// ID | 可能的值: 同上
-	Id int64 `json:"id,omitempty"`
+	Id int64 `json:"id,string,omitempty"`
 	// 表情名
-	Name int64 `json:"name,omitempty"`
+	Name int64 `json:"name,string,omitempty"`
 }
 
 func (s *PokeSegmentData) SegmentType() SegmentDataType {
@@ -284,22 +276,21 @@ func (s *ForwardSegmentData) SegmentType() SegmentDataType {
 	return SegmentDataTypeForward
 }
 
-// NodeSegmentId 合并转发节点
-// 消息段类型: node
-// 支持发送
-type NodeSegmentId struct {
-	// 转发的消息 ID
-	Id string `json:"id,omitempty"`
-}
-
-func (s *NodeSegmentId) SegmentType() SegmentDataType {
-	return SegmentDataTypeNode
-}
-
-// NodeSegmentData 合并转发自定义节点
+// NodeSegmentData
+// Id 不为空时:
+// 合并转发节点
+//
+//	消息段类型: node
+//	支持发送
+//
+// Id 为空时:
+// 合并转发自定义节点
 // 消息段类型: node
 // 支持发送、支持接收
 type NodeSegmentData struct {
+	// 转发的消息 ID
+	Id string `json:"id,omitempty"`
+
 	// 发送者 QQ 号
 	UserId string `json:"user_id,omitempty"`
 	// 发送者昵称
@@ -329,7 +320,7 @@ func (s *XmlSegmentData) SegmentType() SegmentDataType {
 // 支持发送、支持接收
 type JsonSegmentData struct {
 	// JSON 内容
-	Data json.RawMessage `json:"data,omitempty"`
+	Data string `json:"data,omitempty"`
 }
 
 func (s *JsonSegmentData) SegmentType() SegmentDataType {

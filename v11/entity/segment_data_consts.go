@@ -28,7 +28,8 @@ const (
 type ImageSegmentDataType string
 
 const (
-	ImageSegmentDataTypeFlash ImageSegmentDataType = "flash"
+	ImageSegmentDataTypeCommon ImageSegmentDataType = ""
+	ImageSegmentDataTypeFlash  ImageSegmentDataType = "flash"
 )
 
 type ContactSegmentDataType string
