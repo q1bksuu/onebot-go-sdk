@@ -1,3 +1,4 @@
+//go:generate go run ../cmd/entity-gen
 package entity
 
 import (

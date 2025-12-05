@@ -1,3 +1,4 @@
+//go:generate go run ../cmd/entity-gen
 package entity
 
 // SegmentData 表示 OneBot 消息的数据片段
