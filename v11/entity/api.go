@@ -1,3 +1,4 @@
+//go:generate go run ../cmd/entity-gen
 package entity
 
 // SendPrivateMsgRequest 表示 send_private_msg API 的请求参数
