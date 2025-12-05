@@ -1,7 +1,0 @@
-[project]
-name = "onebot-go-sdk-generator-v11"
-version = "0.1.0"
-description = "OneBot Go SDK Code Generator v11"
-readme = "README.md"
-requires-python = ">=3.8"
-dependencies = []
