@@ -20,18 +20,16 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
           go-version: '1.25'
           cache: true
 
       - name: Run GolangCI-Lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.7.1
           args: --timeout=5m
-          skip-pkg-cache: false
-          skip-build-cache: false
 
       - name: Comment PR with lint results
         if: github.event_name == 'pull_request' && failure()
