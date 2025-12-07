@@ -4,6 +4,7 @@ package entity
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 )
 
 // MessageValue 表示 OneBot message 字段的值
@@ -50,11 +51,21 @@ func (m *MessageValue) UnmarshalJSON(data []byte) error {
 // 用于在序列化时正确地输出值.
 func (m *MessageValue) MarshalJSON() ([]byte, error) {
 	if m.Type == MessageValueTypeString {
-		return json.Marshal(m.StringValue)
+		data, err := json.Marshal(m.StringValue)
+		if err != nil {
+			return nil, fmt.Errorf("marshal string value: %w", err)
+		}
+
+		return data, nil
 	}
 
 	if m.Type == MessageValueTypeArray {
-		return json.Marshal(m.ArrayValue)
+		data, err := json.Marshal(m.ArrayValue)
+		if err != nil {
+			return nil, fmt.Errorf("marshal array value: %w", err)
+		}
+
+		return data, nil
 	}
 
 	return []byte{'n', 'u', 'l', 'l'}, nil

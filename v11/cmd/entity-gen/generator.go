@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -9,6 +10,11 @@ import (
 	"os"
 	"strings"
 	"unicode"
+)
+
+var (
+	errFileNotExist   = errors.New("file does not exist")
+	errStructNotFound = errors.New("struct types not found")
 )
 
 type fieldInfo struct {
@@ -30,8 +36,9 @@ type Generator struct {
 
 func NewGenerator(filename string, constFiles []string) (*Generator, error) {
 	// 检查文件是否存在
-	if _, err := os.Stat(filename); os.IsNotExist(err) {
-		return nil, fmt.Errorf("file %s does not exist", filename)
+	_, err := os.Stat(filename)
+	if err != nil && os.IsNotExist(err) {
+		return nil, fmt.Errorf("%w: %s", errFileNotExist, filename)
 	}
 
 	fileSet := token.NewFileSet()
@@ -75,7 +82,7 @@ package `)
 
 	structDefs := g.findStructs(targetTypes)
 	if len(structDefs) == 0 {
-		return "", fmt.Errorf("struct types %q not found", targetTypes)
+		return "", fmt.Errorf("%w: %v", errStructNotFound, targetTypes)
 	}
 
 	for _, sd := range structDefs {
