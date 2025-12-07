@@ -46,7 +46,8 @@ func (r *TextSegmentData) SetText(v string) *TextSegmentData {
 }
 
 // GetId
-// QQ 表情 ID | 可能的值: 见 [QQ 表情 ID 表](https://github.com/richardchien/coolq-http-api/wiki/%E8%A1%A8%E6%83%85-CQ-%E7%A0%81-ID-%E8%A1%A8)
+// QQ 表情 ID | 可能的值: 见 [QQ 表情 ID 表]
+// https://github.com/richardchien/coolq-http-api/wiki/%E8%A1%A8%E6%83%85-CQ-%E7%A0%81-ID-%E8%A1%A8
 func (r *FaceSegmentData) GetId() string {
 	if r == nil {
 		var zero string
@@ -56,7 +57,8 @@ func (r *FaceSegmentData) GetId() string {
 }
 
 // SetId
-// QQ 表情 ID | 可能的值: 见 [QQ 表情 ID 表](https://github.com/richardchien/coolq-http-api/wiki/%E8%A1%A8%E6%83%85-CQ-%E7%A0%81-ID-%E8%A1%A8)
+// QQ 表情 ID | 可能的值: 见 [QQ 表情 ID 表]
+// https://github.com/richardchien/coolq-http-api/wiki/%E8%A1%A8%E6%83%85-CQ-%E7%A0%81-ID-%E8%A1%A8
 func (r *FaceSegmentData) SetId(v string) *FaceSegmentData {
 	r.Id = v
 	return r

@@ -1,0 +1,192 @@
+version: "2"
+linters:
+  # Default set of linters.
+  # The value can be:
+  # - `standard`: https://golangci-lint.run/docs/linters/#enabled-by-default
+  # - `all`: enables all linters by default.
+  # - `none`: disables all linters by default.
+  # - `fast`: enables only linters considered as "fast" (`golangci-lint help linters --json | jq '[ .[] | select(.fast==true) ] | map(.name)'`).
+  # Default: standard
+  #  default: all
+  enable:
+    - arangolint
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - canonicalheader
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - cyclop
+    - decorder
+    # - depguard # Use gomodguard
+    - dogsled
+    - dupl
+    - dupword
+    - durationcheck
+    - embeddedstructfieldcheck
+    - err113
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    # - exhaustruct # You should use a constructor instead of this hacky workaround.
+    - exptostd
+    - fatcontext
+    - forbidigo
+    - forcetypeassert
+    - funcorder
+    - funlen
+    - ginkgolinter
+    - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gochecknoinits
+    - gochecksumtype
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - godox
+    - goheader
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - gosmopolitan
+    - govet
+    - grouper
+    - iface
+    - importas
+    - inamedparam
+    - ineffassign
+    - interfacebloat
+    - intrange
+    # - ireturn # Disabled: conflicts with dependency injection architecture
+    - lll
+    - loggercheck
+    - maintidx
+    - makezero
+    - mirror
+    - misspell
+    # - mnd # Always unnecessary.
+    - musttag
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - nlreturn
+    - noctx
+    - noinlineerr
+    - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
+    - paralleltest
+    - perfsprint
+    - prealloc
+    - predeclared
+    - promlinter
+    - protogetter
+    - reassign
+    - recvcheck
+    - revive
+    - rowserrcheck
+    - sloglint
+    - spancheck
+    - sqlclosecheck
+    - staticcheck
+    - tagalign
+    - tagliatelle
+    - testableexamples
+    - testifylint
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - usetesting
+    # - varnamelen
+    - wastedassign
+    - whitespace
+    - wrapcheck
+    - wsl_v5
+    - zerologlint
+  exclusions:
+    paths:
+      - docs
+  settings:
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
+    revive:
+      rules:
+        - name: unused-parameter
+          severity: warning
+          disabled: false
+          exclude: [ "" ]
+          arguments:
+            - allow-regex: "^_"
+    tagliatelle:
+      # Checks the struct tag name case.
+      case:
+        # Defines the association between tag name and case.
+        # Any struct tag name can be used.
+        # Supported string cases:
+        # - `camel`
+        # - `pascal`
+        # - `kebab`
+        # - `snake`
+        # - `upperSnake`
+        # - `goCamel`
+        # - `goPascal`
+        # - `goKebab`
+        # - `goSnake`
+        # - `upper`
+        # - `lower`
+        # - `header`
+        rules:
+          json: snake
+    gomodguard:
+      allowed:
+        # List of allowed modules.
+        # Default: []
+        modules:
+          - gopkg.in/yaml.v2
+        # List of allowed module domains.
+        # Default: []
+        domains:
+          - golang.org
+          - github.com
+          - go.opentelemetry.io
+          - gorm.io
+          - go.uber.org
+      blocked:
+        # List of blocked modules.
+        # Default: []
+        modules:
+          # Blocked module.
+          - github.com/uudashr/go-module:
+              # Recommended modules that should be used instead. (Optional)
+              recommendations:
+                - golang.org/x/mod
+              # Reason why the recommended module should be used. (Optional)
+              reason: "`mod` is the official go.mod parser library."
+          - github.com/pkg/errors:
+              reason: "Should be replaced by standard lib errors package"
+        # List of blocked module version constraints.
+        # Default: []
+        versions:
+          # Blocked module with version constraint.
+          - github.com/mitchellh/go-homedir:
+              # Version constraint, see https://github.com/Masterminds/semver#basic-comparisons.
+              version: "< 1.1.0"
+              # Reason why the version constraint exists. (Optional)
+              reason: "testing if blocked version constraint works."
+        # Set to true to raise lint issues for packages that are loaded from a local path via replace directive.
+        # Default: false
+        local-replace-directives: false

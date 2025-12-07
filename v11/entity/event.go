@@ -3,7 +3,7 @@ package entity
 
 // PrivateMessageEvent 私聊消息
 // 事件类型: private
-// 子类型: friend,group,other
+// 子类型: friend,group,other.
 type PrivateMessageEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -43,7 +43,7 @@ type PrivateMessageEventSender struct {
 
 // GroupMessageEvent 群消息
 // 事件类型: group
-// 子类型: normal,anonymous,notice
+// 子类型: normal,anonymous,notice.
 type GroupMessageEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -96,7 +96,7 @@ type GroupMessageEventSender struct {
 }
 
 // GroupFileUploadEvent 群文件上传
-// 事件类型: group_upload
+// 事件类型: group_upload.
 type GroupFileUploadEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -127,7 +127,7 @@ type GroupFileUploadEventFile struct {
 
 // GroupAdminChangeEvent 群管理员变动
 // 事件类型: group_admin
-// 子类型: set,unset
+// 子类型: set,unset.
 type GroupAdminChangeEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -147,7 +147,7 @@ type GroupAdminChangeEvent struct {
 
 // GroupMemberDecreaseEvent 群成员减少
 // 事件类型: group_decrease
-// 子类型: leave,kick,kick_me
+// 子类型: leave,kick,kick_me.
 type GroupMemberDecreaseEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -169,7 +169,7 @@ type GroupMemberDecreaseEvent struct {
 
 // GroupMemberIncreaseEvent 群成员增加
 // 事件类型: group_increase
-// 子类型: approve,invite
+// 子类型: approve,invite.
 type GroupMemberIncreaseEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -191,7 +191,7 @@ type GroupMemberIncreaseEvent struct {
 
 // GroupBanEvent 群禁言
 // 事件类型: group_ban
-// 子类型: ban,lift_ban
+// 子类型: ban,lift_ban.
 type GroupBanEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -214,7 +214,7 @@ type GroupBanEvent struct {
 }
 
 // FriendAddEvent 好友添加
-// 事件类型: friend_add
+// 事件类型: friend_add.
 type FriendAddEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -229,7 +229,7 @@ type FriendAddEvent struct {
 }
 
 // GroupRecallEvent 群消息撤回
-// 事件类型: group_recall
+// 事件类型: group_recall.
 type GroupRecallEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -250,7 +250,7 @@ type GroupRecallEvent struct {
 }
 
 // FriendRecallEvent 好友消息撤回
-// 事件类型: friend_recall
+// 事件类型: friend_recall.
 type FriendRecallEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -268,7 +268,7 @@ type FriendRecallEvent struct {
 
 // GroupPokeEvent 群内戳一戳
 // 事件类型: notify
-// 子类型: poke
+// 子类型: poke.
 type GroupPokeEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -290,7 +290,7 @@ type GroupPokeEvent struct {
 
 // GroupLuckyKingEvent 群红包运气王
 // 事件类型: notify
-// 子类型: lucky_king
+// 子类型: lucky_king.
 type GroupLuckyKingEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -312,7 +312,7 @@ type GroupLuckyKingEvent struct {
 
 // GroupHonorChangeEvent 群成员荣誉变更
 // 事件类型: notify
-// 子类型: honor
+// 子类型: honor.
 type GroupHonorChangeEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -333,7 +333,7 @@ type GroupHonorChangeEvent struct {
 }
 
 // FriendRequestEvent 加好友请求
-// 事件类型: friend
+// 事件类型: friend.
 type FriendRequestEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -353,7 +353,7 @@ type FriendRequestEvent struct {
 
 // GroupRequestEvent 加群请求／邀请
 // 事件类型: group
-// 子类型: add,invite
+// 子类型: add,invite.
 type GroupRequestEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -377,7 +377,7 @@ type GroupRequestEvent struct {
 
 // LifecycleEvent 生命周期
 // 事件类型: lifecycle
-// 子类型: enable,disable,connect
+// 子类型: enable,disable,connect.
 type LifecycleEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`
@@ -392,7 +392,7 @@ type LifecycleEvent struct {
 }
 
 // HeartbeatEvent 心跳
-// 事件类型: heartbeat
+// 事件类型: heartbeat.
 type HeartbeatEvent struct {
 	// 事件发生的时间戳
 	Time int64 `json:"time"`

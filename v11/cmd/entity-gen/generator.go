@@ -35,6 +35,7 @@ func NewGenerator(filename string, constFiles []string) (*Generator, error) {
 	}
 
 	fileSet := token.NewFileSet()
+
 	f, err := parser.ParseFile(fileSet, filename, nil, parser.ParseComments)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse file %s: %w", filename, err)
@@ -76,6 +77,7 @@ package `)
 	if len(structDefs) == 0 {
 		return "", fmt.Errorf("struct types %q not found", targetTypes)
 	}
+
 	for _, sd := range structDefs {
 		methods := g.generateMethodsForStruct(sd.name, sd.structType)
 		buf.WriteString(methods)
@@ -88,6 +90,7 @@ package `)
 		// 如果格式化失败，返回未格式化的版本，但提供错误信息
 		return buf.String(), fmt.Errorf("failed to format generated code: %w", err)
 	}
+
 	return string(formatted), nil
 }
 
@@ -98,6 +101,7 @@ type structDef struct {
 
 func (g *Generator) findStructs(targetTypes []string) []structDef {
 	var result []structDef
+
 	targetTypeSet := make(map[string]struct{}, len(targetTypes))
 	for _, targetType := range targetTypes {
 		targetTypeSet[targetType] = struct{}{}
@@ -196,6 +200,7 @@ func (g *Generator) extractFields(st *ast.StructType, receiverType string) []fie
 					receiverType: receiverType,
 				})
 			}
+
 			continue
 		}
 
@@ -260,9 +265,11 @@ func (g *Generator) generateGetter(field fieldInfo) string {
 	}
 	return *r.%s`, field.name, returnType, field.name))
 	} else {
-		codeBuilder.WriteString(fmt.Sprintf(`return r.%s`, field.name))
+		codeBuilder.WriteString("return r." + field.name)
 	}
+
 	codeBuilder.WriteByte('}')
+
 	return codeBuilder.String()
 }
 
@@ -291,6 +298,7 @@ func (g *Generator) generateSetter(field fieldInfo) string {
 	} else {
 		assignment = fmt.Sprintf("r.%s = v", field.name)
 	}
+
 	codeBuilder.WriteString(fmt.Sprintf("func (r *%s) %s(v %s) *%s {",
 		field.receiverType, methodName, paramType, field.receiverType))
 	codeBuilder.WriteByte('\n')
@@ -317,11 +325,13 @@ func (g *Generator) unwrapPointer(expr ast.Expr) (bool, ast.Expr) {
 	if starExpr, ok := expr.(*ast.StarExpr); ok {
 		return true, starExpr.X
 	}
+
 	return false, expr
 }
 
 func (g *Generator) isBasicType(expr ast.Expr) bool {
 	ident, ok := expr.(*ast.Ident)
+
 	return ok && (g.basicTypesCache[ident.Name] || g.customTypeAliases[ident.Name])
 }
 
@@ -335,6 +345,7 @@ func (g *Generator) typeToString(expr ast.Expr) string {
 		if e.Len == nil {
 			return "[]" + g.typeToString(e.Elt)
 		}
+
 		return "[" + g.typeToString(e.Len) + "]" + g.typeToString(e.Elt)
 	case *ast.MapType:
 		return "map[" + g.typeToString(e.Key) + "]" + g.typeToString(e.Value)
@@ -362,6 +373,7 @@ func (g *Generator) extractComments(field *ast.Field) string {
 	comments := make([]string, 0, len(commentList))
 	for _, comment := range commentList {
 		text := strings.TrimPrefix(comment.Text, "//")
+
 		text = strings.TrimSpace(text)
 		if text != "" {
 			// 处理多行注释的情况
@@ -378,7 +390,7 @@ func (g *Generator) extractComments(field *ast.Field) string {
 	return strings.Join(comments, "\n")
 }
 
-// 初始化 Go 基本类型缓存，O(1) 查询性能
+// 初始化 Go 基本类型缓存，O(1) 查询性能.
 func initBasicTypesCache() map[string]bool {
 	return map[string]bool{
 		"bool":       true,
@@ -405,13 +417,13 @@ func initBasicTypesCache() map[string]bool {
 }
 
 // 收集文件中的自定义类型别名定义
-// 特别是那些基于基本类型（如 string）的别名类型
+// 特别是那些基于基本类型（如 string）的别名类型.
 func (g *Generator) collectCustomTypeAliases() {
 	g.collectTypeAliasesFromAST(g.file)
 }
 
 // collectCustomTypeAliasesFromFile 从额外的文件中收集自定义类型别名
-// 这个方法用来扫描 *_consts.go 这样的类型定义文件
+// 这个方法用来扫描 *_consts.go 这样的类型定义文件.
 func (g *Generator) collectCustomTypeAliasesFromFile(filepath string) error {
 	f, err := parser.ParseFile(g.fileSet, filepath, nil, parser.ParseComments)
 	if err != nil {
@@ -419,10 +431,11 @@ func (g *Generator) collectCustomTypeAliasesFromFile(filepath string) error {
 	}
 
 	g.collectTypeAliasesFromAST(f)
+
 	return nil
 }
 
-// collectTypeAliasesFromAST 从 AST 节点中收集自定义类型别名
+// collectTypeAliasesFromAST 从 AST 节点中收集自定义类型别名.
 func (g *Generator) collectTypeAliasesFromAST(file *ast.File) {
 	for _, decl := range file.Decls {
 		genDecl, ok := decl.(*ast.GenDecl)
@@ -456,6 +469,7 @@ func toExportedName(name string) string {
 	if len(name) == 0 {
 		return name
 	}
+
 	return strings.ToUpper(name[:1]) + name[1:]
 }
 
@@ -463,5 +477,6 @@ func isExported(name string) bool {
 	if len(name) == 0 {
 		return false
 	}
+
 	return unicode.IsUpper(rune(name[0]))
 }
