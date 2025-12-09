@@ -1,6 +1,12 @@
 //go:generate go run ../cmd/entity-gen
 package entity
 
+import (
+	"fmt"
+
+	"github.com/q1bksuu/onebot-go-sdk/v11/internal/util"
+)
+
 // SendPrivateMsgRequest send_private_msg API 的请求参数
 // 发送私聊消息.
 type SendPrivateMsgRequest struct {
@@ -585,7 +591,42 @@ type GetVersionInfoResponse struct {
 	AppVersion string `json:"app_version"`
 	// OneBot 标准版本，如 `v11`
 	ProtocolVersion string `json:"protocol_version"`
-	// TODO 其他状态信息，视 OneBot 实现而定
+	// 原始字段的值，只能通过 GetOrigin / SetOrigin 方法访问
+	origin map[string]any
+}
+
+// GetOrigin 获取指定 key 的原始字段值.
+func (r *GetVersionInfoResponse) GetOrigin(key string) any {
+	if r == nil || r.origin == nil {
+		return nil
+	}
+
+	return r.origin[key]
+}
+
+// SetOrigin 设置指定 key 的原始字段值.
+func (r *GetVersionInfoResponse) SetOrigin(key string, value any) *GetVersionInfoResponse {
+	if r == nil {
+		return r
+	}
+
+	if r.origin == nil {
+		r.origin = make(map[string]any)
+	}
+
+	r.origin[key] = value
+
+	return r
+}
+
+// UnmarshalJSON 自定义反序列化，同时捕获所有原始字段数据.
+func (r *GetVersionInfoResponse) UnmarshalJSON(data []byte) error {
+	err := util.JsonUnmarshalToMapAndStruct(data, r, &r.origin)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal StatusMeta: %w", err)
+	}
+
+	return nil
 }
 
 // SetRestartRequest set_restart API 的请求参数
