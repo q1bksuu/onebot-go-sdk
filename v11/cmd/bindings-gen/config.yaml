@@ -1,0 +1,238 @@
+# bindings-gen 配置示例
+# 按分组生成 Service 接口 + 服务器绑定 + HTTP 客户端封装。
+# Method 必填；Action 必填。
+# 可选 http_method（默认 POST，可选 GET/POST），path（默认 /{action}）。
+
+combined_service:
+  name: OneBotService
+  desc: OneBot 11 协议服务
+groups:
+  - name: message
+    service_name: MessageService
+    service_desc: 消息服务
+    actions:
+      - method: SendPrivateMsg
+        action: send_private_msg
+        desc: 发送私聊消息
+        request: entity.SendPrivateMsgRequest
+        response: entity.SendPrivateMsgResponse
+      - method: SendGroupMsg
+        action: send_group_msg
+        desc: 发送群消息
+        request: entity.SendGroupMsgRequest
+        response: entity.SendGroupMsgResponse
+      - method: SendMsg
+        action: send_msg
+        desc: 发送消息
+        request: entity.SendMsgRequest
+        response: entity.SendMsgResponse
+      - method: DeleteMsg
+        action: delete_msg
+        desc: 撤回消息
+        request: entity.DeleteMsgRequest
+        response: entity.DeleteMsgResponse
+      - method: GetMsg
+        action: get_msg
+        desc: 获取消息
+        request: entity.GetMsgRequest
+        response: entity.GetMsgResponse
+      - method: GetForwardMsg
+        action: get_forward_msg
+        desc: 获取合并转发消息
+        request: entity.GetForwardMsgRequest
+        response: entity.GetForwardMsgResponse
+
+  - name: friend
+    service_name: FriendService
+    service_desc: 好友与陌生人管理
+    actions:
+      - method: SendLike
+        action: send_like
+        desc: 发送好友赞
+        request: entity.SendLikeRequest
+        response: entity.SendLikeResponse
+      - method: SetFriendAddRequest
+        action: set_friend_add_request
+        desc: 处理加好友请求
+        request: entity.SetFriendAddRequestRequest
+        response: entity.SetFriendAddRequestResponse
+      - method: GetStrangerInfo
+        action: get_stranger_info
+        desc: 获取陌生人信息
+        request: entity.GetStrangerInfoRequest
+        response: entity.GetStrangerInfoResponse
+      - method: GetFriendList
+        action: get_friend_list
+        desc: 获取好友列表
+        request: entity.GetFriendListRequest
+        response: entity.GetFriendListResponse
+
+  - name: group_admin
+    service_name: GroupAdminService
+    service_desc: 群管理
+    actions:
+      - method: SetGroupKick
+        action: set_group_kick
+        desc: 群组踢人
+        request: entity.SetGroupKickRequest
+        response: entity.SetGroupKickResponse
+      - method: SetGroupBan
+        action: set_group_ban
+        desc: 群组单人禁言
+        request: entity.SetGroupBanRequest
+        response: entity.SetGroupBanResponse
+      - method: SetGroupAnonymousBan
+        action: set_group_anonymous_ban
+        desc: 群组匿名用户禁言
+        request: entity.SetGroupAnonymousBanRequest
+        response: entity.SetGroupAnonymousBanResponse
+      - method: SetGroupWholeBan
+        action: set_group_whole_ban
+        desc: 群组全员禁言
+        request: entity.SetGroupWholeBanRequest
+        response: entity.SetGroupWholeBanResponse
+      - method: SetGroupAdmin
+        action: set_group_admin
+        desc: 群组设置管理员
+        request: entity.SetGroupAdminRequest
+        response: entity.SetGroupAdminResponse
+      - method: SetGroupAnonymous
+        action: set_group_anonymous
+        desc: 群组匿名开关
+        request: entity.SetGroupAnonymousRequest
+        response: entity.SetGroupAnonymousResponse
+      - method: SetGroupCard
+        action: set_group_card
+        desc: 设置群名片
+        request: entity.SetGroupCardRequest
+        response: entity.SetGroupCardResponse
+      - method: SetGroupName
+        action: set_group_name
+        desc: 设置群名
+        request: entity.SetGroupNameRequest
+        response: entity.SetGroupNameResponse
+      - method: SetGroupLeave
+        action: set_group_leave
+        desc: 退出群组
+        request: entity.SetGroupLeaveRequest
+        response: entity.SetGroupLeaveResponse
+      - method: SetGroupSpecialTitle
+        action: set_group_special_title
+        desc: 设置群组专属头衔
+        request: entity.SetGroupSpecialTitleRequest
+        response: entity.SetGroupSpecialTitleResponse
+      - method: SetGroupAddRequest
+        action: set_group_add_request
+        desc: 处理加群请求
+        request: entity.SetGroupAddRequestRequest
+        response: entity.SetGroupAddRequestResponse
+
+  - name: group_info
+    service_name: GroupInfoService
+    service_desc: 群信息查询
+    actions:
+      - method: GetGroupInfo
+        action: get_group_info
+        desc: 获取群信息
+        request: entity.GetGroupInfoRequest
+        response: entity.GetGroupInfoResponse
+      - method: GetGroupList
+        action: get_group_list
+        desc: 获取群列表
+        request: entity.GetGroupListRequest
+        response: entity.GetGroupListResponse
+      - method: GetGroupMemberInfo
+        action: get_group_member_info
+        desc: 获取群成员信息
+        request: entity.GetGroupMemberInfoRequest
+        response: entity.GetGroupMemberInfoResponse
+      - method: GetGroupMemberList
+        action: get_group_member_list
+        desc: 获取群成员列表
+        request: entity.GetGroupMemberListRequest
+        response: entity.GetGroupMemberListResponse
+      - method: GetGroupHonorInfo
+        action: get_group_honor_info
+        desc: 获取群荣誉信息
+        request: entity.GetGroupHonorInfoRequest
+        response: entity.GetGroupHonorInfoResponse
+
+  - name: account
+    service_name: AccountService
+    service_desc: 账号凭证
+    actions:
+      - method: GetLoginInfo
+        action: get_login_info
+        desc: 获取登录号信息
+        request: entity.GetLoginInfoRequest
+        response: entity.GetLoginInfoResponse
+      - method: GetCookies
+        action: get_cookies
+        desc: 获取 cookies
+        request: entity.GetCookiesRequest
+        response: entity.GetCookiesResponse
+      - method: GetCsrfToken
+        action: get_csrf_token
+        desc: 获取 csrf token
+        request: entity.GetCsrfTokenRequest
+        response: entity.GetCsrfTokenResponse
+      - method: GetCredentials
+        action: get_credentials
+        desc: 获取登录凭证
+        request: entity.GetCredentialsRequest
+        response: entity.GetCredentialsResponse
+
+  - name: media
+    service_name: MediaService
+    service_desc: 媒体获取
+    actions:
+      - method: GetRecord
+        action: get_record
+        desc: 获取语音
+        request: entity.GetRecordRequest
+        response: entity.GetRecordResponse
+      - method: GetImage
+        action: get_image
+        desc: 获取图片
+        request: entity.GetImageRequest
+        response: entity.GetImageResponse
+
+  - name: capability
+    service_name: CapabilityService
+    service_desc: 能力检查
+    actions:
+      - method: CanSendImage
+        action: can_send_image
+        desc: 检查是否可以发送图片
+        request: entity.CanSendImageRequest
+        response: entity.CanSendImageResponse
+      - method: CanSendRecord
+        action: can_send_record
+        desc: 检查是否可以发送语音
+        request: entity.CanSendRecordRequest
+        response: entity.CanSendRecordResponse
+
+  - name: system
+    service_name: SystemService
+    service_desc: 状态与运维
+    actions:
+      - method: GetStatus
+        action: get_status
+        desc: 获取运行状态
+        request: entity.GetStatusRequest
+        response: entity.GetStatusResponse
+      - method: GetVersionInfo
+        action: get_version_info
+        desc: 获取版本信息
+        request: entity.GetVersionInfoRequest
+        response: entity.GetVersionInfoResponse
+      - method: SetRestart
+        action: set_restart
+        desc: 重启
+        request: entity.SetRestartRequest
+        response: entity.SetRestartResponse
+      - method: CleanCache
+        action: clean_cache
+        desc: 清理缓存
+        request: entity.CleanCacheRequest
+        response: entity.CleanCacheResponse

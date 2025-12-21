@@ -20,7 +20,6 @@ linters:
     - copyloopvar
     - cyclop
     - decorder
-    # - depguard # Use gomodguard
     - dogsled
     - dupl
     - dupword
@@ -32,7 +31,6 @@ linters:
     - errname
     - errorlint
     - exhaustive
-    # - exhaustruct # You should use a constructor instead of this hacky workaround.
     - exptostd
     - fatcontext
     - forbidigo
@@ -64,14 +62,12 @@ linters:
     - ineffassign
     - interfacebloat
     - intrange
-    # - ireturn # Disabled: conflicts with dependency injection architecture
     - lll
     - loggercheck
     - maintidx
     - makezero
     - mirror
     - misspell
-    # - mnd # Always unnecessary.
     - musttag
     - nakedret
     - nestif
@@ -109,12 +105,17 @@ linters:
     - unused
     - usestdlibvars
     - usetesting
-    # - varnamelen
+    - varnamelen
     - wastedassign
     - whitespace
     - wrapcheck
     - wsl_v5
     - zerologlint
+  disable:
+    - depguard  # Use gomodguard instead
+    - exhaustruct  # Should use constructors instead
+    - ireturn  # Conflicts with dependency injection architecture
+    - mnd  # Magic number detection is often unnecessary
   exclusions:
     paths:
       - docs
@@ -151,12 +152,13 @@ linters:
         # - `header`
         rules:
           json: snake
+          yaml: snake
     gomodguard:
       allowed:
         # List of allowed modules.
         # Default: []
         modules:
-          - gopkg.in/yaml.v2
+          - gopkg.in/yaml.v3
         # List of allowed module domains.
         # Default: []
         domains:
@@ -190,3 +192,59 @@ linters:
         # Set to true to raise lint issues for packages that are loaded from a local path via replace directive.
         # Default: false
         local-replace-directives: false
+    funlen:
+      lines: 80
+    varnamelen:
+      # The longest distance, in source lines, that is being considered a "small scope".
+      # Variables used in at most this many lines will be ignored.
+      # Default: 5
+      max-distance: 5
+      # The minimum length of a variable's name that is considered "long".
+      # Variable names that are at least this long will be ignored.
+      # Default: 3
+      min-name-length: 3
+      # Check method receivers.
+      # Default: false
+      check-receiver: false
+      # Check named return values.
+      # Default: false
+      check-return: false
+      # Check type parameters.
+      # Default: false
+      check-type-param: false
+      # Ignore "ok" variables that hold the bool return value of a type assertion.
+      # Default: false
+      ignore-type-assert-ok: true
+      # Ignore "ok" variables that hold the bool return value of a map index.
+      # Default: false
+      ignore-map-index-ok: true
+      # Ignore "ok" variables that hold the bool return value of a channel receive.
+      # Default: false
+      ignore-chan-recv-ok: true
+      # Optional list of variable names that should be ignored completely.
+      # Default: []
+      ignore-names:
+        - i
+        - j
+        - k
+        - id
+        - ip
+        - db
+        - fn
+        - ok
+        - wg
+      # Optional list of variable declarations that should be ignored completely.
+      # Entries must be in one of the following forms (see below for examples):
+      # - for variables, parameters, named return values, method receivers, or type parameters:
+      #   <name> <type>  (<type> can also be a pointer/slice/map/chan/...)
+      # - for constants: const <name>
+      #
+      # Default: []
+      ignore-decls:
+        - t testing.T
+        - b testing.B
+        - w http.ResponseWriter
+        - r *http.Request
+        - T any
+        - m map[string]any
+        - u *url.URL
