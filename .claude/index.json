@@ -1,0 +1,261 @@
+{
+  "project_name": "onebot-11-go-sdk",
+  "description": "OneBot 11 协议的 Go 语言 SDK 实现",
+  "last_updated": "2025-12-21T15:53:08+08:00",
+  "scan_strategy": "adaptive",
+  "stages_completed": ["A", "B"],
+  "root_document": "CLAUDE.md",
+  "modules": [
+    {
+      "path": "v11/entity",
+      "name": "entity",
+      "description": "OneBot 11 协议实体定义（消息/事件/API）",
+      "document": "v11/entity/CLAUDE.md",
+      "entry_files": [
+        "v11/entity/base.go",
+        "v11/entity/message.go",
+        "v11/entity/event.go",
+        "v11/entity/api.go",
+        "v11/entity/communication.go",
+        "v11/entity/segment_data.go"
+      ],
+      "key_files": {
+        "interfaces": ["v11/entity/message.go", "v11/entity/communication.go"],
+        "implementations": ["v11/entity/event.go", "v11/entity/api.go"],
+        "tests": ["v11/entity/base_test.go", "v11/entity/api_test.go"],
+        "constants": [
+          "v11/entity/base_consts.go",
+          "v11/entity/message_consts.go",
+          "v11/entity/event_consts.go",
+          "v11/entity/api_consts.go",
+          "v11/entity/communication_consts.go",
+          "v11/entity/segment_data_consts.go"
+        ],
+        "generated": [
+          "v11/entity/api_setter_getter.go",
+          "v11/entity/base_setter_getter.go",
+          "v11/entity/communication_setter_getter.go",
+          "v11/entity/event_setter_getter.go",
+          "v11/entity/message_setter_getter.go",
+          "v11/entity/segment_data_setter_getter.go"
+        ]
+      },
+      "test_coverage": {
+        "has_tests": true,
+        "test_files": 2,
+        "test_count_estimate": 2
+      },
+      "dependencies": {
+        "internal": ["github.com/q1bksuu/onebot-go-sdk/v11/internal/util"],
+        "external": []
+      },
+      "coverage_notes": "完整覆盖所有协议实体定义，包含常量和生成代码"
+    },
+    {
+      "path": "v11/client",
+      "name": "client",
+      "description": "HTTP 客户端实现，调用 OneBot API",
+      "document": "v11/client/CLAUDE.md",
+      "entry_files": ["v11/client/http_client.go"],
+      "key_files": {
+        "interfaces": ["v11/client/http_client_options.go"],
+        "implementations": ["v11/client/http_client.go"],
+        "tests": ["v11/client/http_client_test.go"],
+        "generated": ["v11/client/http_client_actions.go"]
+      },
+      "test_coverage": {
+        "has_tests": true,
+        "test_files": 1,
+        "test_count_estimate": 7
+      },
+      "dependencies": {
+        "internal": [
+          "github.com/q1bksuu/onebot-go-sdk/v11/entity",
+          "github.com/q1bksuu/onebot-go-sdk/v11/internal/util"
+        ],
+        "external": []
+      },
+      "coverage_notes": "完整覆盖 HTTP 客户端核心逻辑和自动生成的 40+ API 方法"
+    },
+    {
+      "path": "v11/server",
+      "name": "server",
+      "description": "HTTP 服务端实现，接收 OneBot 动作请求",
+      "document": "v11/server/CLAUDE.md",
+      "entry_files": ["v11/server/http_server.go", "v11/server/dispatcher.go"],
+      "key_files": {
+        "interfaces": ["v11/server/handler.go"],
+        "implementations": [
+          "v11/server/http_server.go",
+          "v11/server/dispatcher.go",
+          "v11/server/binder.go"
+        ],
+        "tests": [
+          "v11/server/http_server_test.go",
+          "v11/server/dispatcher_test.go",
+          "v11/server/binder_test.go"
+        ],
+        "errors": ["v11/server/errors.go"],
+        "generated": ["v11/server/http_server_actions_register.go"]
+      },
+      "test_coverage": {
+        "has_tests": true,
+        "test_files": 3,
+        "test_count_estimate": 15
+      },
+      "dependencies": {
+        "internal": [
+          "github.com/q1bksuu/onebot-go-sdk/v11/entity",
+          "github.com/q1bksuu/onebot-go-sdk/v11/internal/util"
+        ],
+        "external": []
+      },
+      "coverage_notes": "完整覆盖 HTTP 服务端、分发器、绑定器及生成的注册代码"
+    },
+    {
+      "path": "v11/internal/util",
+      "name": "util",
+      "description": "内部工具函数（JSON 映射、类型转换）",
+      "document": "v11/internal/util/CLAUDE.md",
+      "entry_files": ["v11/internal/util/util.go"],
+      "key_files": {
+        "implementations": ["v11/internal/util/util.go"],
+        "tests": ["v11/internal/util/util_test.go"]
+      },
+      "test_coverage": {
+        "has_tests": true,
+        "test_files": 1,
+        "test_count_estimate": 23,
+        "benchmark_count": 4
+      },
+      "dependencies": {
+        "external": ["github.com/go-viper/mapstructure/v2"]
+      },
+      "coverage_notes": "完整覆盖 JSON 映射工具函数，包含 23 个单元测试和 4 个性能基准"
+    },
+    {
+      "path": "v11/cmd/entity-gen",
+      "name": "entity-gen",
+      "description": "实体 Getter/Setter 代码生成工具",
+      "document": "v11/cmd/entity-gen/CLAUDE.md",
+      "entry_files": ["v11/cmd/entity-gen/main.go"],
+      "key_files": {
+        "implementations": ["v11/cmd/entity-gen/main.go", "v11/cmd/entity-gen/generator.go"],
+        "documentation": ["v11/cmd/entity-gen/README.md"]
+      },
+      "test_coverage": {
+        "has_tests": false,
+        "notes": "生成的代码在 entity 模块中经过充分测试"
+      },
+      "dependencies": {
+        "external": []
+      },
+      "coverage_notes": "完整扫描了代码生成工具的实现和文档"
+    },
+    {
+      "path": "v11/cmd/bindings-gen",
+      "name": "bindings-gen",
+      "description": "API 绑定代码生成工具",
+      "document": "v11/cmd/bindings-gen/CLAUDE.md",
+      "entry_files": ["v11/cmd/bindings-gen/main.go"],
+      "key_files": {
+        "implementations": ["v11/cmd/bindings-gen/main.go", "v11/cmd/bindings-gen/models.go"],
+        "configuration": ["v11/cmd/bindings-gen/config.yaml"]
+      },
+      "test_coverage": {
+        "has_tests": false,
+        "notes": "生成的代码在 client 和 server 模块中经过充分测试"
+      },
+      "dependencies": {
+        "external": ["gopkg.in/yaml.v3"]
+      },
+      "coverage_notes": "完整扫描了配置文件和核心模型定义"
+    }
+  ],
+  "global_files": {
+    "go_mod": "go.mod",
+    "gitignore": ".gitignore",
+    "ci_workflows": [
+      ".github/workflows/go-tests.yml",
+      ".github/workflows/golangci-lint.yml"
+    ],
+    "linter_config": ".golangci.yml"
+  },
+  "technology_stack": {
+    "language": "Go",
+    "version": "1.25",
+    "dependencies": [
+      {
+        "name": "github.com/go-viper/mapstructure/v2",
+        "version": "v2.4.0",
+        "purpose": "JSON 到结构体映射"
+      },
+      {
+        "name": "github.com/stretchr/testify",
+        "version": "v1.11.1",
+        "purpose": "测试框架"
+      },
+      {
+        "name": "gopkg.in/yaml.v3",
+        "version": "latest",
+        "purpose": "YAML 解析"
+      }
+    ],
+    "toolchain": [
+      {
+        "name": "golangci-lint",
+        "version": "v2.7.1",
+        "enabled_linters_count": "100+"
+      }
+    ]
+  },
+  "development_guidelines": {
+    "coding_standards": {
+      "max_function_lines": 80,
+      "min_variable_name_length": 3,
+      "json_tag_style": "snake_case",
+      "error_wrapping": "required"
+    },
+    "testing_strategy": {
+      "unit_tests": "required",
+      "benchmark_tests": "recommended for critical paths",
+      "integration_tests": "via GitHub Actions",
+      "platforms_tested": ["ubuntu-latest", "macos-latest", "windows-latest"]
+    },
+    "code_generation": {
+      "entity_getters_setters": "go run v11/cmd/entity-gen",
+      "api_bindings": "go run v11/cmd/bindings-gen",
+      "trigger": "go generate ./..."
+    }
+  },
+  "coverage_summary": {
+    "total_go_files": 40,
+    "scanned_files": 40,
+    "coverage_percentage": 100,
+    "modules_covered": 6,
+    "tests_found": {
+      "unit_tests": 47,
+      "benchmark_tests": 4
+    },
+    "ignored_patterns": [
+      "*.exe",
+      "*.dll",
+      "*.so",
+      "*.dylib",
+      "*.test",
+      "*.out",
+      "coverage.*",
+      "*.coverprofile",
+      "profile.cov",
+      "go.work",
+      "go.work.sum",
+      ".env",
+      ".idea/",
+      ".vscode/"
+    ]
+  },
+  "next_steps": [],
+  "gaps_identified": [],
+  "truncated": false,
+  "notes": "完整扫描了所有核心模块（entity、client、server、internal/util、cmd），覆盖率 100%。项目结构清晰，测试充分，代码生成驱动开发模式运作良好。"
+}
