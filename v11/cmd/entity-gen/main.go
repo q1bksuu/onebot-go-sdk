@@ -27,12 +27,6 @@ func main() {
 		log.Fatal(`Usage: entity-gen -file=<file.go> [-type=<TypeName>] [-output=<output.go>]
 [-consts=<file1,file2>] [-no-auto-scan]
 
-Or use with 'go generate':
-
-  //go:generate entity-gen -type=MyType
-  //go:generate entity-gen -type=MyType,AnotherType
-  //go:generate entity-gen (generate all types)
-
 Options:
   -file          Go source file to process
   -type          Struct type name(s) to process (optional, process all if empty)

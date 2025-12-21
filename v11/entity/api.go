@@ -434,7 +434,7 @@ type GetGroupMemberListRequest struct {
 }
 
 // GetGroupMemberListResponse get_group_member_list API 的响应数据
-// 但对于同一个群组的同一个成员，获取列表时和获取单独的成员信息时，某些字段可能有所不同，例如 `area`、`title` 等字段在获取列表时无法获得，具体应以单独的成员信息为准。
+// 但对于同一个群组的同一个成员，获取列表时和获取单独的成员信息时，某些字段可能有所不同，例如 `area`、`title` 等字段在获取列表时无法获得，具体应以单独的成员信息为准.
 type GetGroupMemberListResponse []GetGroupMemberInfoResponse
 
 // GetGroupHonorInfoRequest get_group_honor_info API 的请求参数
