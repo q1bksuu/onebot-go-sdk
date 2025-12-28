@@ -140,58 +140,58 @@ type OneBotService interface {
 // RegisterGenerated registers actions to dispatcher.
 func RegisterGenerated(d *Dispatcher, svc OneBotService) {
 	// Group: message
-	d.Register("send_private_msg", NewBinder[entity.SendPrivateMsgRequest, entity.SendPrivateMsgResponse]("send_private_msg", svc.SendPrivateMsg).Handler())
-	d.Register("send_group_msg", NewBinder[entity.SendGroupMsgRequest, entity.SendGroupMsgResponse]("send_group_msg", svc.SendGroupMsg).Handler())
-	d.Register("send_msg", NewBinder[entity.SendMsgRequest, entity.SendMsgResponse]("send_msg", svc.SendMsg).Handler())
-	d.Register("delete_msg", NewBinder[entity.DeleteMsgRequest, entity.DeleteMsgResponse]("delete_msg", svc.DeleteMsg).Handler())
-	d.Register("get_msg", NewBinder[entity.GetMsgRequest, entity.GetMsgResponse]("get_msg", svc.GetMsg).Handler())
-	d.Register("get_forward_msg", NewBinder[entity.GetForwardMsgRequest, entity.GetForwardMsgResponse]("get_forward_msg", svc.GetForwardMsg).Handler())
+	d.Register("send_private_msg", APIFuncToActionHandler(svc.SendPrivateMsg))
+	d.Register("send_group_msg", APIFuncToActionHandler(svc.SendGroupMsg))
+	d.Register("send_msg", APIFuncToActionHandler(svc.SendMsg))
+	d.Register("delete_msg", APIFuncToActionHandler(svc.DeleteMsg))
+	d.Register("get_msg", APIFuncToActionHandler(svc.GetMsg))
+	d.Register("get_forward_msg", APIFuncToActionHandler(svc.GetForwardMsg))
 
 	// Group: friend
-	d.Register("send_like", NewBinder[entity.SendLikeRequest, entity.SendLikeResponse]("send_like", svc.SendLike).Handler())
-	d.Register("set_friend_add_request", NewBinder[entity.SetFriendAddRequestRequest, entity.SetFriendAddRequestResponse]("set_friend_add_request", svc.SetFriendAddRequest).Handler())
-	d.Register("get_stranger_info", NewBinder[entity.GetStrangerInfoRequest, entity.GetStrangerInfoResponse]("get_stranger_info", svc.GetStrangerInfo).Handler())
-	d.Register("get_friend_list", NewBinder[entity.GetFriendListRequest, entity.GetFriendListResponse]("get_friend_list", svc.GetFriendList).Handler())
+	d.Register("send_like", APIFuncToActionHandler(svc.SendLike))
+	d.Register("set_friend_add_request", APIFuncToActionHandler(svc.SetFriendAddRequest))
+	d.Register("get_stranger_info", APIFuncToActionHandler(svc.GetStrangerInfo))
+	d.Register("get_friend_list", APIFuncToActionHandler(svc.GetFriendList))
 
 	// Group: group_admin
-	d.Register("set_group_kick", NewBinder[entity.SetGroupKickRequest, entity.SetGroupKickResponse]("set_group_kick", svc.SetGroupKick).Handler())
-	d.Register("set_group_ban", NewBinder[entity.SetGroupBanRequest, entity.SetGroupBanResponse]("set_group_ban", svc.SetGroupBan).Handler())
-	d.Register("set_group_anonymous_ban", NewBinder[entity.SetGroupAnonymousBanRequest, entity.SetGroupAnonymousBanResponse]("set_group_anonymous_ban", svc.SetGroupAnonymousBan).Handler())
-	d.Register("set_group_whole_ban", NewBinder[entity.SetGroupWholeBanRequest, entity.SetGroupWholeBanResponse]("set_group_whole_ban", svc.SetGroupWholeBan).Handler())
-	d.Register("set_group_admin", NewBinder[entity.SetGroupAdminRequest, entity.SetGroupAdminResponse]("set_group_admin", svc.SetGroupAdmin).Handler())
-	d.Register("set_group_anonymous", NewBinder[entity.SetGroupAnonymousRequest, entity.SetGroupAnonymousResponse]("set_group_anonymous", svc.SetGroupAnonymous).Handler())
-	d.Register("set_group_card", NewBinder[entity.SetGroupCardRequest, entity.SetGroupCardResponse]("set_group_card", svc.SetGroupCard).Handler())
-	d.Register("set_group_name", NewBinder[entity.SetGroupNameRequest, entity.SetGroupNameResponse]("set_group_name", svc.SetGroupName).Handler())
-	d.Register("set_group_leave", NewBinder[entity.SetGroupLeaveRequest, entity.SetGroupLeaveResponse]("set_group_leave", svc.SetGroupLeave).Handler())
-	d.Register("set_group_special_title", NewBinder[entity.SetGroupSpecialTitleRequest, entity.SetGroupSpecialTitleResponse]("set_group_special_title", svc.SetGroupSpecialTitle).Handler())
-	d.Register("set_group_add_request", NewBinder[entity.SetGroupAddRequestRequest, entity.SetGroupAddRequestResponse]("set_group_add_request", svc.SetGroupAddRequest).Handler())
+	d.Register("set_group_kick", APIFuncToActionHandler(svc.SetGroupKick))
+	d.Register("set_group_ban", APIFuncToActionHandler(svc.SetGroupBan))
+	d.Register("set_group_anonymous_ban", APIFuncToActionHandler(svc.SetGroupAnonymousBan))
+	d.Register("set_group_whole_ban", APIFuncToActionHandler(svc.SetGroupWholeBan))
+	d.Register("set_group_admin", APIFuncToActionHandler(svc.SetGroupAdmin))
+	d.Register("set_group_anonymous", APIFuncToActionHandler(svc.SetGroupAnonymous))
+	d.Register("set_group_card", APIFuncToActionHandler(svc.SetGroupCard))
+	d.Register("set_group_name", APIFuncToActionHandler(svc.SetGroupName))
+	d.Register("set_group_leave", APIFuncToActionHandler(svc.SetGroupLeave))
+	d.Register("set_group_special_title", APIFuncToActionHandler(svc.SetGroupSpecialTitle))
+	d.Register("set_group_add_request", APIFuncToActionHandler(svc.SetGroupAddRequest))
 
 	// Group: group_info
-	d.Register("get_group_info", NewBinder[entity.GetGroupInfoRequest, entity.GetGroupInfoResponse]("get_group_info", svc.GetGroupInfo).Handler())
-	d.Register("get_group_list", NewBinder[entity.GetGroupListRequest, entity.GetGroupListResponse]("get_group_list", svc.GetGroupList).Handler())
-	d.Register("get_group_member_info", NewBinder[entity.GetGroupMemberInfoRequest, entity.GetGroupMemberInfoResponse]("get_group_member_info", svc.GetGroupMemberInfo).Handler())
-	d.Register("get_group_member_list", NewBinder[entity.GetGroupMemberListRequest, entity.GetGroupMemberListResponse]("get_group_member_list", svc.GetGroupMemberList).Handler())
-	d.Register("get_group_honor_info", NewBinder[entity.GetGroupHonorInfoRequest, entity.GetGroupHonorInfoResponse]("get_group_honor_info", svc.GetGroupHonorInfo).Handler())
+	d.Register("get_group_info", APIFuncToActionHandler(svc.GetGroupInfo))
+	d.Register("get_group_list", APIFuncToActionHandler(svc.GetGroupList))
+	d.Register("get_group_member_info", APIFuncToActionHandler(svc.GetGroupMemberInfo))
+	d.Register("get_group_member_list", APIFuncToActionHandler(svc.GetGroupMemberList))
+	d.Register("get_group_honor_info", APIFuncToActionHandler(svc.GetGroupHonorInfo))
 
 	// Group: account
-	d.Register("get_login_info", NewBinder[entity.GetLoginInfoRequest, entity.GetLoginInfoResponse]("get_login_info", svc.GetLoginInfo).Handler())
-	d.Register("get_cookies", NewBinder[entity.GetCookiesRequest, entity.GetCookiesResponse]("get_cookies", svc.GetCookies).Handler())
-	d.Register("get_csrf_token", NewBinder[entity.GetCsrfTokenRequest, entity.GetCsrfTokenResponse]("get_csrf_token", svc.GetCsrfToken).Handler())
-	d.Register("get_credentials", NewBinder[entity.GetCredentialsRequest, entity.GetCredentialsResponse]("get_credentials", svc.GetCredentials).Handler())
+	d.Register("get_login_info", APIFuncToActionHandler(svc.GetLoginInfo))
+	d.Register("get_cookies", APIFuncToActionHandler(svc.GetCookies))
+	d.Register("get_csrf_token", APIFuncToActionHandler(svc.GetCsrfToken))
+	d.Register("get_credentials", APIFuncToActionHandler(svc.GetCredentials))
 
 	// Group: media
-	d.Register("get_record", NewBinder[entity.GetRecordRequest, entity.GetRecordResponse]("get_record", svc.GetRecord).Handler())
-	d.Register("get_image", NewBinder[entity.GetImageRequest, entity.GetImageResponse]("get_image", svc.GetImage).Handler())
+	d.Register("get_record", APIFuncToActionHandler(svc.GetRecord))
+	d.Register("get_image", APIFuncToActionHandler(svc.GetImage))
 
 	// Group: capability
-	d.Register("can_send_image", NewBinder[entity.CanSendImageRequest, entity.CanSendImageResponse]("can_send_image", svc.CanSendImage).Handler())
-	d.Register("can_send_record", NewBinder[entity.CanSendRecordRequest, entity.CanSendRecordResponse]("can_send_record", svc.CanSendRecord).Handler())
+	d.Register("can_send_image", APIFuncToActionHandler(svc.CanSendImage))
+	d.Register("can_send_record", APIFuncToActionHandler(svc.CanSendRecord))
 
 	// Group: system
-	d.Register("get_status", NewBinder[entity.GetStatusRequest, entity.GetStatusResponse]("get_status", svc.GetStatus).Handler())
-	d.Register("get_version_info", NewBinder[entity.GetVersionInfoRequest, entity.GetVersionInfoResponse]("get_version_info", svc.GetVersionInfo).Handler())
-	d.Register("set_restart", NewBinder[entity.SetRestartRequest, entity.SetRestartResponse]("set_restart", svc.SetRestart).Handler())
-	d.Register("clean_cache", NewBinder[entity.CleanCacheRequest, entity.CleanCacheResponse]("clean_cache", svc.CleanCache).Handler())
+	d.Register("get_status", APIFuncToActionHandler(svc.GetStatus))
+	d.Register("get_version_info", APIFuncToActionHandler(svc.GetVersionInfo))
+	d.Register("set_restart", APIFuncToActionHandler(svc.SetRestart))
+	d.Register("clean_cache", APIFuncToActionHandler(svc.CleanCache))
 
 }
 
