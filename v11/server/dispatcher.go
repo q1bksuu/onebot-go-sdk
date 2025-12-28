@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/q1bksuu/onebot-go-sdk/v11/entity"
+	"github.com/q1bksuu/onebot-go-sdk/v11/internal/util"
 )
 
 // Dispatcher 根据 action 路由到对应 handler.
@@ -34,4 +36,24 @@ func (d *Dispatcher) HandleActionRequest(
 	}
 
 	return h(ctx, req.Params)
+}
+
+func APIFuncToActionHandler[Req any, Resp any](
+	fn func(ctx context.Context, req *Req) (*entity.ActionResponse[Resp], error),
+) ActionHandler {
+	return func(ctx context.Context, params map[string]any) (*entity.ActionRawResponse, error) {
+		var req Req
+
+		err := util.JsonTagMapping(params, &req)
+		if err != nil {
+			return nil, fmt.Errorf("bind params to request failed: %w", err)
+		}
+
+		resp, err := fn(ctx, &req)
+		if err != nil {
+			return nil, err
+		}
+
+		return resp.ToActionRawResponse()
+	}
 }
