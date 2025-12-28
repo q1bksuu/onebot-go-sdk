@@ -597,7 +597,7 @@ func TestHTTPServer_EventPath_AllEventTypes(t *testing.T) {
 		return map[string]any{"approve": true}, nil
 	})
 	dispatcher.Register("meta_event/lifecycle", func(_ context.Context, _ entity.Event) (map[string]any, error) {
-		return nil, ErrNoEventHandler
+		return map[string]any{}, nil
 	})
 
 	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
