@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/go-viper/mapstructure/v2"
 )
@@ -44,4 +45,13 @@ func JsonTagMapping(source, dest any) error {
 	}
 
 	return nil
+}
+
+func NormalizePath(path string) string {
+	path = strings.Trim(path, "/")
+	if path == "" {
+		return ""
+	}
+
+	return "/" + path
 }
