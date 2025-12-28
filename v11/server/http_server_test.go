@@ -25,10 +25,10 @@ func TestNewHTTPServer_PathPrefixNormalizeAndHandler(t *testing.T) {
 	t.Parallel()
 
 	cfg := HTTPConfig{
-		Addr:       ":0",
-		PathPrefix: "api", // 不带斜杠
+		Addr:          ":0",
+		APIPathPrefix: "api", // 不带斜杠
 	}
-	server := NewHTTPServer(cfg, ActionRequestHandlerFunc(
+	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
 		func(_ context.Context, req *entity.ActionRequest) (*entity.ActionRawResponse, error) {
 			// 简单回显 action，便于断言
 			require.Equal(t, "test_action", req.Action)
@@ -39,10 +39,10 @@ func TestNewHTTPServer_PathPrefixNormalizeAndHandler(t *testing.T) {
 				Message: "ok",
 			}, nil
 		},
-	))
+	)))
 
-	// PathPrefix 应被归一化为 "/api/"
-	assert.Equal(t, "/api/", server.cfg.PathPrefix)
+	// APIPathPrefix 应被归一化为 "/api/"
+	assert.Equal(t, "/api/", server.cfg.APIPathPrefix)
 
 	// Handler() 应该是可用的 http.Handler
 	recorder := httptest.NewRecorder()
@@ -56,21 +56,21 @@ func TestNewHTTPServer_PathPrefixNormalizeAndHandler(t *testing.T) {
 	err := json.NewDecoder(recorder.Body).Decode(&resp)
 	require.NoError(t, err)
 	assert.Equal(t, entity.StatusOK, resp.Status)
-	assert.Equal(t, entity.ActionResponseRetcode(0), resp.Retcode)
+	assert.Equal(t, entity.RetcodeSuccess, resp.Retcode)
 }
 
 func newTestServer(cfg HTTPConfig, handler ActionRequestHandlerFunc) *HTTPServer {
-	if cfg.PathPrefix == "" {
-		cfg.PathPrefix = "/"
+	if cfg.APIPathPrefix == "" {
+		cfg.APIPathPrefix = "/"
 	}
 
-	return NewHTTPServer(cfg, handler)
+	return NewHTTPServer(cfg, WithActionHandler(handler))
 }
 
 func TestHTTPServer_HandleRoot_PathAndNotFound(t *testing.T) {
 	t.Parallel()
 
-	server := newTestServer(HTTPConfig{PathPrefix: "/onebot"},
+	server := newTestServer(HTTPConfig{APIPathPrefix: "/onebot"},
 		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
 			return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
 		})
@@ -92,8 +92,8 @@ func TestHTTPServer_AuthRequired_MissingOrWrongToken(t *testing.T) {
 	t.Parallel()
 
 	cfg := HTTPConfig{
-		PathPrefix:  "/onebot",
-		AccessToken: "secret",
+		APIPathPrefix: "/onebot",
+		AccessToken:   "secret",
 	}
 	server := newTestServer(cfg,
 		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
@@ -120,8 +120,8 @@ func TestHTTPServer_AuthRequired_WithHeaderAndQuery(t *testing.T) {
 	t.Parallel()
 
 	cfg := HTTPConfig{
-		PathPrefix:  "/onebot",
-		AccessToken: "secret",
+		APIPathPrefix: "/onebot",
+		AccessToken:   "secret",
 	}
 
 	called := false
@@ -163,7 +163,7 @@ func TestHTTPServer_Params_QueryAndFormAndJSON(t *testing.T) {
 
 		return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
 	}
-	server := newTestServer(HTTPConfig{PathPrefix: "/onebot"}, handler)
+	server := newTestServer(HTTPConfig{APIPathPrefix: "/onebot"}, handler)
 
 	body := map[string]any{
 		"b": "override",
@@ -202,7 +202,7 @@ func TestHTTPServer_Params_InvalidForm(t *testing.T) {
 
 		return nil, errUnexpected
 	}
-	server := newTestServer(HTTPConfig{PathPrefix: "/onebot"}, handler)
+	server := newTestServer(HTTPConfig{APIPathPrefix: "/onebot"}, handler)
 
 	recorder := httptest.NewRecorder()
 	// Content-Type 设置为 application/x-www-form-urlencoded，body 随意
@@ -222,7 +222,7 @@ func TestHTTPServer_JSON_InvalidOrUnsupportedContentType(t *testing.T) {
 
 		return nil, errUnexpected
 	}
-	server := newTestServer(HTTPConfig{PathPrefix: "/onebot"}, handler)
+	server := newTestServer(HTTPConfig{APIPathPrefix: "/onebot"}, handler)
 
 	// 无效 JSON
 	recorder := httptest.NewRecorder()
@@ -260,7 +260,7 @@ func TestHTTPServer_WriteError_Mapping(t *testing.T) {
 			handler := func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
 				return nil, testCase.err
 			}
-			server := newTestServer(HTTPConfig{PathPrefix: "/onebot"}, handler)
+			server := newTestServer(HTTPConfig{APIPathPrefix: "/onebot"}, handler)
 
 			recorder := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodGet, "/onebot/test", nil)
@@ -275,10 +275,10 @@ func TestHTTPServer_NilResponse_DefaultFailed(t *testing.T) {
 	t.Parallel()
 
 	handler := func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
-		//nolint:nilnil
+		//nolint:nilnil // 测试代码中返回 nil, nil 用于测试默认行为
 		return nil, nil
 	}
-	server := newTestServer(HTTPConfig{PathPrefix: "/onebot"}, handler)
+	server := newTestServer(HTTPConfig{APIPathPrefix: "/onebot"}, handler)
 
 	recorder := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/onebot/test", nil)
@@ -301,14 +301,14 @@ func TestHTTPServer_StartAndShutdown_ContextCancel(t *testing.T) {
 
 	// 使用本地随机端口
 	cfg := HTTPConfig{
-		Addr:       "127.0.0.1:0",
-		PathPrefix: "/onebot",
+		Addr:          "127.0.0.1:0",
+		APIPathPrefix: "/onebot",
 	}
-	server := NewHTTPServer(cfg, ActionRequestHandlerFunc(
+	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
 		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
 			return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
 		},
-	))
+	)))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -333,4 +333,339 @@ func TestHTTPServer_StartAndShutdown_ContextCancel(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Fatal("Start did not return after context cancel")
 	}
+}
+
+// 事件处理测试.
+func TestHTTPServer_EventPath_Registration(t *testing.T) {
+	t.Parallel()
+
+	cfg := HTTPConfig{
+		Addr:      ":0",
+		EventPath: "/event",
+	}
+	eventHandler := EventRequestHandlerFunc(func(_ context.Context, _ entity.Event) (map[string]any, error) {
+		return map[string]any{"reply": "test"}, nil
+	})
+
+	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
+			return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
+		})), WithEventHandler(eventHandler))
+
+	// EventPath 应该被正确注册
+
+	// 测试事件路由是否注册
+	recorder := httptest.NewRecorder()
+	eventJSON := `{
+		"time": 1515204254,
+		"self_id": 10001000,
+		"post_type": "message",
+		"message_type": "private",
+		"sub_type": "friend",
+		"message_id": 12,
+		"user_id": 12345678,
+		"message": "Hello~",
+		"raw_message": "Hello~",
+		"font": 456,
+		"sender": {
+			"user_id": 12345678,
+			"nickname": "A User",
+			"sex": "male",
+			"age": 18
+		}
+	}`
+	req := httptest.NewRequest(http.MethodPost, "/event", bytes.NewBufferString(eventJSON))
+	req.Header.Set("Content-Type", "application/json")
+	server.Handler().ServeHTTP(recorder, req)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+
+	var quickOp map[string]any
+
+	err := json.NewDecoder(recorder.Body).Decode(&quickOp)
+	require.NoError(t, err)
+	assert.Equal(t, "test", quickOp["reply"])
+}
+
+func TestHTTPServer_EventPath_NoHandler_Returns204(t *testing.T) {
+	t.Parallel()
+
+	cfg := HTTPConfig{
+		Addr:      ":0",
+		EventPath: "/event",
+	}
+	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
+			return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
+		})))
+
+	// 没有事件处理器时应该返回 204
+	recorder := httptest.NewRecorder()
+	eventJSON := `{
+		"time": 1515204254,
+		"self_id": 10001000,
+		"post_type": "message",
+		"message_type": "private",
+		"sub_type": "friend",
+		"message_id": 12,
+		"user_id": 12345678,
+		"message": "Hello~",
+		"raw_message": "Hello~",
+		"font": 456
+	}`
+	req := httptest.NewRequest(http.MethodPost, "/event", bytes.NewBufferString(eventJSON))
+	req.Header.Set("Content-Type", "application/json")
+	server.Handler().ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusNoContent, recorder.Code)
+}
+
+func TestHTTPServer_EventPath_OnlyAcceptsPOST(t *testing.T) {
+	t.Parallel()
+
+	cfg := HTTPConfig{
+		Addr:      ":0",
+		EventPath: "/event",
+	}
+	eventHandler := EventRequestHandlerFunc(func(_ context.Context, _ entity.Event) (map[string]any, error) {
+		//nolint:nilnil // 测试代码中返回 nil, nil 表示没有快速操作，这是预期的行为
+		return nil, nil
+	})
+
+	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
+			//nolint:nilnil // 测试代码中返回 nil, nil 用于测试默认行为
+			return nil, nil
+		})), WithEventHandler(eventHandler))
+
+	// GET 请求应该返回 405
+	recorder := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/event", nil)
+	server.Handler().ServeHTTP(recorder, req)
+	assert.Equal(t, http.StatusMethodNotAllowed, recorder.Code)
+}
+
+func TestHTTPServer_EventPath_InvalidJSON_Returns400(t *testing.T) {
+	t.Parallel()
+
+	cfg := HTTPConfig{
+		Addr:      ":0",
+		EventPath: "/event",
+	}
+	eventHandler := EventRequestHandlerFunc(func(_ context.Context, _ entity.Event) (map[string]any, error) {
+		//nolint:nilnil // 测试代码中返回 nil, nil 表示没有快速操作，这是预期的行为
+		return nil, nil
+	})
+
+	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
+			//nolint:nilnil // 测试代码中返回 nil, nil 用于测试默认行为
+			return nil, nil
+		})), WithEventHandler(eventHandler))
+
+	// 无效的 JSON 应该返回 400
+	recorder := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/event", bytes.NewBufferString("invalid json"))
+	req.Header.Set("Content-Type", "application/json")
+	server.Handler().ServeHTTP(recorder, req)
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+}
+
+func TestHTTPServer_EventPath_EmptyQuickOp_Returns204(t *testing.T) {
+	t.Parallel()
+
+	cfg := HTTPConfig{
+		Addr:      ":0",
+		EventPath: "/event",
+	}
+	eventHandler := EventRequestHandlerFunc(func(_ context.Context, _ entity.Event) (map[string]any, error) {
+		//nolint:nilnil // 返回 nil，应该返回 204
+		return nil, nil
+	})
+
+	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
+			//nolint:nilnil // 测试代码中返回 nil, nil 用于测试默认行为
+			return nil, nil
+		})), WithEventHandler(eventHandler))
+
+	recorder := httptest.NewRecorder()
+	eventJSON := `{
+		"time": 1515204254,
+		"self_id": 10001000,
+		"post_type": "message",
+		"message_type": "private",
+		"sub_type": "friend",
+		"message_id": 12,
+		"user_id": 12345678,
+		"message": "Hello~",
+		"raw_message": "Hello~",
+		"font": 456
+	}`
+	req := httptest.NewRequest(http.MethodPost, "/event", bytes.NewBufferString(eventJSON))
+	req.Header.Set("Content-Type", "application/json")
+	server.Handler().ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusNoContent, recorder.Code)
+}
+
+//nolint:gochecknoglobals
+var eventPathTestCases = []struct {
+	name       string
+	eventJSON  string
+	wantStatus int
+	wantReply  string
+}{
+	{
+		name: "private message",
+		eventJSON: `{
+			"time": 1515204254,
+			"self_id": 10001000,
+			"post_type": "message",
+			"message_type": "private",
+			"sub_type": "friend",
+			"message_id": 12,
+			"user_id": 12345678,
+			"message": "Hello~",
+			"raw_message": "Hello~",
+			"font": 456
+		}`,
+		wantStatus: http.StatusOK,
+		wantReply:  "private",
+	},
+	{
+		name: "group upload",
+		eventJSON: `{
+			"time": 1515204254,
+			"self_id": 10001000,
+			"post_type": "notice",
+			"notice_type": "group_upload",
+			"group_id": 123456,
+			"user_id": 789012,
+			"file": {
+				"id": "file1",
+				"name": "test.txt",
+				"size": 1024,
+				"busid": 0
+			}
+		}`,
+		wantStatus: http.StatusOK,
+		wantReply:  "upload",
+	},
+	{
+		name: "friend request",
+		eventJSON: `{
+			"time": 1515204254,
+			"self_id": 10001000,
+			"post_type": "request",
+			"request_type": "friend",
+			"user_id": 12345678,
+			"comment": "test",
+			"flag": "flag123"
+		}`,
+		wantStatus: http.StatusOK,
+	},
+	{
+		name: "lifecycle event",
+		eventJSON: `{
+			"time": 1515204254,
+			"self_id": 10001000,
+			"post_type": "meta_event",
+			"meta_event_type": "lifecycle",
+			"sub_type": "enable"
+		}`,
+		wantStatus: http.StatusNoContent,
+	},
+}
+
+func TestHTTPServer_EventPath_AllEventTypes(t *testing.T) {
+	t.Parallel()
+
+	cfg := HTTPConfig{
+		Addr:      ":0",
+		EventPath: "/event",
+	}
+
+	dispatcher := NewEventDispatcher()
+	dispatcher.Register("message/private", func(_ context.Context, _ entity.Event) (map[string]any, error) {
+		return map[string]any{"reply": "private"}, nil
+	})
+	dispatcher.Register("notice/group_upload", func(_ context.Context, _ entity.Event) (map[string]any, error) {
+		return map[string]any{"reply": "upload"}, nil
+	})
+	dispatcher.Register("request/friend", func(_ context.Context, _ entity.Event) (map[string]any, error) {
+		return map[string]any{"approve": true}, nil
+	})
+	dispatcher.Register("meta_event/lifecycle", func(_ context.Context, _ entity.Event) (map[string]any, error) {
+		return map[string]any{}, nil
+	})
+
+	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
+			return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
+		})), WithEventHandler(dispatcher))
+
+	for _, testCase := range eventPathTestCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			recorder := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPost, "/event", bytes.NewBufferString(testCase.eventJSON))
+			req.Header.Set("Content-Type", "application/json")
+			server.Handler().ServeHTTP(recorder, req)
+
+			assert.Equal(t, testCase.wantStatus, recorder.Code)
+
+			if testCase.wantReply != "" {
+				var quickOp map[string]any
+
+				err := json.NewDecoder(recorder.Body).Decode(&quickOp)
+				require.NoError(t, err)
+				assert.Equal(t, testCase.wantReply, quickOp["reply"])
+			}
+		})
+	}
+}
+
+func TestEventDispatcher_Routing(t *testing.T) {
+	t.Parallel()
+
+	dispatcher := NewEventDispatcher()
+
+	// 注册不同级别的处理器
+	var calledKey string
+
+	dispatcher.Register("message", func(_ context.Context, _ entity.Event) (map[string]any, error) {
+		calledKey = "message"
+
+		//nolint:nilnil // 测试代码中返回 nil, nil 表示没有快速操作
+		return nil, nil
+	})
+	dispatcher.Register("message/private", func(_ context.Context, _ entity.Event) (map[string]any, error) {
+		calledKey = "message/private"
+
+		//nolint:nilnil // 测试代码中返回 nil, nil 表示没有快速操作
+		return nil, nil
+	})
+	dispatcher.Register("message/private/friend", func(_ context.Context, _ entity.Event) (map[string]any, error) {
+		calledKey = "message/private/friend"
+
+		//nolint:nilnil // 测试代码中返回 nil, nil 表示没有快速操作
+		return nil, nil
+	})
+
+	// 测试最具体的处理器被调用
+	event := &entity.PrivateMessageEvent{
+		Time:        1515204254,
+		SelfId:      10001000,
+		PostType:    entity.EventPostTypeMessage,
+		MessageType: entity.EventMessageTypePrivate,
+		SubType:     entity.EventPrivateMessageSubTypeFriend,
+		MessageId:   12,
+		UserId:      12345678,
+	}
+
+	_, _ = dispatcher.HandleEvent(context.Background(), event)
+
+	assert.Equal(t, "message/private/friend", calledKey)
 }

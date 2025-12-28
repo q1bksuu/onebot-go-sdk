@@ -1,0 +1,111 @@
+combined_service:
+  name: OneBotEventService
+  desc: OneBot 事件服务
+groups:
+  - name: message
+    service_name: MessageEventService
+    service_desc: 消息事件服务
+    events:
+      - method: HandlePrivateMessage
+        key: message/private
+        type: entity.PrivateMessageEvent
+        desc: 处理私聊消息
+      - method: HandleGroupMessage
+        key: message/group
+        type: entity.GroupMessageEvent
+        desc: 处理群消息
+
+  - name: notice
+    service_name: NoticeEventService
+    service_desc: 通知事件服务
+    events:
+      - method: HandleGroupFileUpload
+        key: notice/group_upload
+        type: entity.GroupFileUploadEvent
+        desc: 处理群文件上传
+      - method: HandleGroupAdminSet
+        key: notice/group_admin/set
+        type: entity.GroupAdminChangeEvent
+        desc: 处理设置管理员
+      - method: HandleGroupAdminUnset
+        key: notice/group_admin/unset
+        type: entity.GroupAdminChangeEvent
+        desc: 处理取消管理员
+      - method: HandleGroupMemberDecreaseLeave
+        key: notice/group_decrease/leave
+        type: entity.GroupMemberDecreaseEvent
+        desc: 处理成员主动退群
+      - method: HandleGroupMemberDecreaseKick
+        key: notice/group_decrease/kick
+        type: entity.GroupMemberDecreaseEvent
+        desc: 处理成员被踢
+      - method: HandleGroupMemberDecreaseKickMe
+        key: notice/group_decrease/kick_me
+        type: entity.GroupMemberDecreaseEvent
+        desc: 处理登录号被踢
+      - method: HandleGroupMemberIncreaseApprove
+        key: notice/group_increase/approve
+        type: entity.GroupMemberIncreaseEvent
+        desc: 处理管理员同意入群
+      - method: HandleGroupMemberIncreaseInvite
+        key: notice/group_increase/invite
+        type: entity.GroupMemberIncreaseEvent
+        desc: 处理管理员邀请入群
+      - method: HandleGroupBan
+        key: notice/group_ban
+        type: entity.GroupBanEvent
+        desc: 处理群禁言事件
+      - method: HandleFriendAdd
+        key: notice/friend_add
+        type: entity.FriendAddEvent
+        desc: 处理新好友添加
+      - method: HandleGroupRecall
+        key: notice/group_recall
+        type: entity.GroupRecallEvent
+        desc: 处理群消息撤回
+      - method: HandleFriendRecall
+        key: notice/friend_recall
+        type: entity.FriendRecallEvent
+        desc: 处理好友消息撤回
+      - method: HandleGroupPoke
+        key: notice/notify/poke
+        type: entity.GroupPokeEvent
+        desc: 处理群内戳一戳
+      - method: HandleGroupLuckyKing
+        key: notice/notify/lucky_king
+        type: entity.GroupLuckyKingEvent
+        desc: 处理群红包运气王
+      - method: HandleGroupHonorChange
+        key: notice/notify/honor
+        type: entity.GroupHonorChangeEvent
+        desc: 处理群成员荣誉变更
+
+  - name: request
+    service_name: RequestEventService
+    service_desc: 请求事件服务
+    events:
+      - method: HandleFriendRequest
+        key: request/friend
+        type: entity.FriendRequestEvent
+        desc: 处理加好友请求
+      - method: HandleGroupRequestAdd
+        key: request/group/add
+        type: entity.GroupRequestEvent
+        desc: 处理加群请求
+      - method: HandleGroupRequestInvite
+        key: request/group/invite
+        type: entity.GroupRequestEvent
+        desc: 处理邀请入群请求
+
+  - name: meta_event
+    service_name: MetaEventService
+    service_desc: 元事件服务
+    events:
+      - method: HandleLifecycle
+        key: meta_event/lifecycle
+        type: entity.LifecycleEvent
+        desc: 处理生命周期事件
+      - method: HandleHeartbeat
+        key: meta_event/heartbeat
+        type: entity.HeartbeatEvent
+        desc: 处理心跳事件

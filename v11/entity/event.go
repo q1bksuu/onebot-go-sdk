@@ -1,6 +1,12 @@
 //go:generate go run ../cmd/entity-gen
 package entity
 
+type Event interface {
+	GetTime() int64
+	GetSelfId() int64
+	GetPostType() EventPostType
+}
+
 // PrivateMessageEvent 私聊消息
 // 事件类型: private
 // 子类型: friend,group,other.
@@ -10,11 +16,12 @@ type PrivateMessageEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: message
-	PostType PrivateMessageEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 消息类型 | 可能的值: private
-	MessageType PrivateMessageEventMessageType `json:"message_type"`
+	MessageType EventMessageType `json:"message_type"`
+
 	// 消息子类型，如果是好友则是 `friend`，如果是群临时会话则是 `group` | 可能的值: friend, group, other
-	SubType PrivateMessageEventSubType `json:"sub_type"`
+	SubType EventPrivateMessageSubType `json:"sub_type"`
 	// 消息 ID
 	MessageId int64 `json:"message_id"`
 	// 发送者 QQ 号
@@ -50,11 +57,12 @@ type GroupMessageEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: message
-	PostType GroupMessageEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 消息类型 | 可能的值: group
-	MessageType GroupMessageEventMessageType `json:"message_type"`
+	MessageType EventMessageType `json:"message_type"`
+
 	// 消息子类型，正常消息是 `normal`，匿名消息是 `anonymous`，系统提示（如「管理员已禁止群内匿名聊天」）是 `notice` | 可能的值: normal, anonymous, notice
-	SubType GroupMessageEventSubType `json:"sub_type"`
+	SubType EventGroupMessageSubType `json:"sub_type"`
 	// 消息 ID
 	MessageId int64 `json:"message_id"`
 	// 群号
@@ -103,9 +111,10 @@ type GroupFileUploadEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: notice
-	PostType GroupFileUploadEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 通知类型 | 可能的值: group_upload
-	NoticeType GroupFileUploadEventNoticeType `json:"notice_type"`
+	NoticeType EventNoticeType `json:"notice_type"`
+
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 发送者 QQ 号
@@ -134,11 +143,12 @@ type GroupAdminChangeEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: notice
-	PostType GroupAdminChangeEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 通知类型 | 可能的值: group_admin
-	NoticeType GroupAdminChangeEventNoticeType `json:"notice_type"`
+	NoticeType EventNoticeType `json:"notice_type"`
+
 	// 事件子类型，分别表示设置和取消管理员 | 可能的值: set, unset
-	SubType GroupAdminChangeEventSubType `json:"sub_type"`
+	SubType EventGroupAdminChangeSubType `json:"sub_type"`
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 管理员 QQ 号
@@ -154,11 +164,12 @@ type GroupMemberDecreaseEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: notice
-	PostType GroupMemberDecreaseEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 通知类型 | 可能的值: group_decrease
-	NoticeType GroupMemberDecreaseEventNoticeType `json:"notice_type"`
+	NoticeType EventNoticeType `json:"notice_type"`
+
 	// 事件子类型，分别表示主动退群、成员被踢、登录号被踢 | 可能的值: leave, kick, kick_me
-	SubType GroupMemberDecreaseEventSubType `json:"sub_type"`
+	SubType EventGroupMemberDecreaseSubType `json:"sub_type"`
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 操作者 QQ 号（如果是主动退群，则和 `user_id` 相同）
@@ -176,11 +187,12 @@ type GroupMemberIncreaseEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: notice
-	PostType GroupMemberIncreaseEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 通知类型 | 可能的值: group_increase
-	NoticeType GroupMemberIncreaseEventNoticeType `json:"notice_type"`
+	NoticeType EventNoticeType `json:"notice_type"`
+
 	// 事件子类型，分别表示管理员已同意入群、管理员邀请入群 | 可能的值: approve, invite
-	SubType GroupMemberIncreaseEventSubType `json:"sub_type"`
+	SubType EventGroupMemberIncreaseSubType `json:"sub_type"`
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 操作者 QQ 号
@@ -198,11 +210,12 @@ type GroupBanEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: notice
-	PostType GroupBanEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 通知类型 | 可能的值: group_ban
-	NoticeType GroupBanEventNoticeType `json:"notice_type"`
+	NoticeType EventNoticeType `json:"notice_type"`
+
 	// 事件子类型，分别表示禁言、解除禁言 | 可能的值: ban, lift_ban
-	SubType GroupBanEventSubType `json:"sub_type"`
+	SubType EventGroupBanSubType `json:"sub_type"`
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 操作者 QQ 号
@@ -221,9 +234,10 @@ type FriendAddEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: notice
-	PostType FriendAddEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 通知类型 | 可能的值: friend_add
-	NoticeType FriendAddEventNoticeType `json:"notice_type"`
+	NoticeType EventNoticeType `json:"notice_type"`
+
 	// 新添加好友 QQ 号
 	UserId int64 `json:"user_id"`
 }
@@ -236,9 +250,10 @@ type GroupRecallEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: notice
-	PostType GroupRecallEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 通知类型 | 可能的值: group_recall
-	NoticeType GroupRecallEventNoticeType `json:"notice_type"`
+	NoticeType EventNoticeType `json:"notice_type"`
+
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 消息发送者 QQ 号
@@ -257,9 +272,10 @@ type FriendRecallEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: notice
-	PostType FriendRecallEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 通知类型 | 可能的值: friend_recall
-	NoticeType FriendRecallEventNoticeType `json:"notice_type"`
+	NoticeType EventNoticeType `json:"notice_type"`
+
 	// 好友 QQ 号
 	UserId int64 `json:"user_id"`
 	// 被撤回的消息 ID
@@ -275,11 +291,12 @@ type GroupPokeEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: notice
-	PostType GroupPokeEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 消息类型 | 可能的值: notify
-	NoticeType GroupPokeEventNoticeType `json:"notice_type"`
+	NoticeType EventNoticeType `json:"notice_type"`
 	// 提示类型 | 可能的值: poke
-	SubType GroupPokeEventSubType `json:"sub_type"`
+	SubType EventNoticeSubType `json:"sub_type"`
+
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 发送者 QQ 号
@@ -297,11 +314,12 @@ type GroupLuckyKingEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: notice
-	PostType GroupLuckyKingEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 消息类型 | 可能的值: notify
-	NoticeType GroupLuckyKingEventNoticeType `json:"notice_type"`
+	NoticeType EventNoticeType `json:"notice_type"`
 	// 提示类型 | 可能的值: lucky_king
-	SubType GroupLuckyKingEventSubType `json:"sub_type"`
+	SubType EventNoticeSubType `json:"sub_type"`
+
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 红包发送者 QQ 号
@@ -319,15 +337,16 @@ type GroupHonorChangeEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: notice
-	PostType GroupHonorChangeEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 消息类型 | 可能的值: notify
-	NoticeType GroupHonorChangeEventNoticeType `json:"notice_type"`
+	NoticeType EventNoticeType `json:"notice_type"`
 	// 提示类型 | 可能的值: honor
-	SubType GroupHonorChangeEventSubType `json:"sub_type"`
+	SubType EventNoticeSubType `json:"sub_type"`
+
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 荣誉类型，分别表示龙王、群聊之火、快乐源泉 | 可能的值: talkative, performer, emotion
-	HonorType GroupHonorChangeEventHonorType `json:"honor_type"`
+	HonorType EventGroupHonorChangeHonorType `json:"honor_type"`
 	// 成员 QQ 号
 	UserId int64 `json:"user_id"`
 }
@@ -340,9 +359,10 @@ type FriendRequestEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: request
-	PostType FriendRequestEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 请求类型 | 可能的值: friend
-	RequestType FriendRequestEventRequestType `json:"request_type"`
+	RequestType EventRequestType `json:"request_type"`
+
 	// 发送请求的 QQ 号
 	UserId int64 `json:"user_id"`
 	// 验证信息
@@ -360,11 +380,12 @@ type GroupRequestEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: request
-	PostType GroupRequestEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 请求类型 | 可能的值: group
-	RequestType GroupRequestEventRequestType `json:"request_type"`
+	RequestType EventRequestType `json:"request_type"`
+
 	// 请求子类型，分别表示加群请求、邀请登录号入群 | 可能的值: add, invite
-	SubType GroupRequestEventSubType `json:"sub_type"`
+	SubType EventGroupRequestSubType `json:"sub_type"`
 	// 群号
 	GroupId int64 `json:"group_id"`
 	// 发送请求的 QQ 号
@@ -384,11 +405,12 @@ type LifecycleEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: meta_event
-	PostType LifecycleEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 元事件类型 | 可能的值: lifecycle
-	MetaEventType LifecycleEventMetaEventType `json:"meta_event_type"`
+	MetaEventType EventMetaType `json:"meta_event_type"`
+
 	// 事件子类型，分别表示 OneBot 启用、停用、WebSocket 连接成功 | 可能的值: enable, disable, connect
-	SubType LifecycleEventSubType `json:"sub_type"`
+	SubType EventLifecycleSubType `json:"sub_type"`
 }
 
 // HeartbeatEvent 心跳
@@ -399,9 +421,10 @@ type HeartbeatEvent struct {
 	// 收到事件的机器人 QQ 号
 	SelfId int64 `json:"self_id"`
 	// 上报类型 | 可能的值: meta_event
-	PostType HeartbeatEventPostType `json:"post_type"`
+	PostType EventPostType `json:"post_type"`
 	// 元事件类型 | 可能的值: heartbeat
-	MetaEventType HeartbeatEventMetaEventType `json:"meta_event_type"`
+	MetaEventType EventMetaType `json:"meta_event_type"`
+
 	// 状态信息
 	Status *StatusMeta `json:"status"`
 	// 到下次心跳的间隔，单位毫秒

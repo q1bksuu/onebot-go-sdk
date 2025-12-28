@@ -1,291 +1,121 @@
 package entity
 
-type PrivateMessageEventPostType string
+type EventPostType string // 上报类型
 
 const (
-	PrivateMessageEventPostTypeMessage PrivateMessageEventPostType = "message"
+	EventPostTypeMessage   EventPostType = "message"    // 消息事件
+	EventPostTypeNotice    EventPostType = "notice"     // 通知事件
+	EventPostTypeRequest   EventPostType = "request"    // 请求事件
+	EventPostTypeMetaEvent EventPostType = "meta_event" // 元事件
 )
 
-type PrivateMessageEventMessageType string
+type EventMessageType string // 消息类型
 
 const (
-	PrivateMessageEventMessageTypePrivate PrivateMessageEventMessageType = "private"
+	EventMessageTypePrivate EventMessageType = "private"
+	EventMessageTypeGroup   EventMessageType = "group"
 )
 
-type PrivateMessageEventSubType string
+type EventPrivateMessageSubType string
 
 const (
-	PrivateMessageEventSubTypeFriend PrivateMessageEventSubType = "friend"
-	PrivateMessageEventSubTypeGroup  PrivateMessageEventSubType = "group"
-	PrivateMessageEventSubTypeOther  PrivateMessageEventSubType = "other"
+	EventPrivateMessageSubTypeFriend EventPrivateMessageSubType = "friend"
+	EventPrivateMessageSubTypeGroup  EventPrivateMessageSubType = "group"
+	EventPrivateMessageSubTypeOther  EventPrivateMessageSubType = "other"
 )
 
-type GroupMessageEventPostType string
+type EventNoticeType string // 通知类型
 
 const (
-	GroupMessageEventPostTypeMessage GroupMessageEventPostType = "message"
+	EventNoticeTypeGroupUpload   EventNoticeType = "group_upload"
+	EventNoticeTypeGroupAdmin    EventNoticeType = "group_admin"
+	EventNoticeTypeGroupDecrease EventNoticeType = "group_decrease"
+	EventNoticeTypeGroupIncrease EventNoticeType = "group_increase"
+	EventNoticeTypeGroupBan      EventNoticeType = "group_ban"
+	EventNoticeTypeFriendAdd     EventNoticeType = "friend_add"
+	EventNoticeTypeGroupRecall   EventNoticeType = "group_recall"
+	EventNoticeTypeFriendRecall  EventNoticeType = "friend_recall"
+	EventNoticeTypeNotify        EventNoticeType = "notify"
 )
 
-type GroupMessageEventMessageType string
+type EventGroupMessageSubType string
 
 const (
-	GroupMessageEventMessageTypeGroup GroupMessageEventMessageType = "group"
+	EventGroupMessageSubTypeNormal    EventGroupMessageSubType = "normal"
+	EventGroupMessageSubTypeAnonymous EventGroupMessageSubType = "anonymous"
+	EventGroupMessageSubTypeNotice    EventGroupMessageSubType = "notice"
 )
 
-type GroupMessageEventSubType string
+type EventGroupAdminChangeSubType string
 
 const (
-	GroupMessageEventSubTypeNormal    GroupMessageEventSubType = "normal"
-	GroupMessageEventSubTypeAnonymous GroupMessageEventSubType = "anonymous"
-	GroupMessageEventSubTypeNotice    GroupMessageEventSubType = "notice"
+	EventGroupAdminChangeSubTypeSet   EventGroupAdminChangeSubType = "set"
+	EventGroupAdminChangeSubTypeUnset EventGroupAdminChangeSubType = "unset"
 )
 
-type GroupFileUploadEventPostType string
+type EventGroupMemberDecreaseSubType string
 
 const (
-	GroupFileUploadEventPostTypeNotice GroupFileUploadEventPostType = "notice"
+	EventGroupMemberDecreaseSubTypeLeave  EventGroupMemberDecreaseSubType = "leave"
+	EventGroupMemberDecreaseSubTypeKick   EventGroupMemberDecreaseSubType = "kick"
+	EventGroupMemberDecreaseSubTypeKickMe EventGroupMemberDecreaseSubType = "kick_me"
 )
 
-type GroupFileUploadEventNoticeType string
+type EventGroupMemberIncreaseSubType string
 
 const (
-	GroupFileUploadEventNoticeTypeGroupUpload GroupFileUploadEventNoticeType = "group_upload"
+	EventGroupMemberIncreaseSubTypeApprove EventGroupMemberIncreaseSubType = "approve"
+	EventGroupMemberIncreaseSubTypeInvite  EventGroupMemberIncreaseSubType = "invite"
 )
 
-type GroupAdminChangeEventPostType string
+type EventGroupBanSubType string
 
 const (
-	GroupAdminChangeEventPostTypeNotice GroupAdminChangeEventPostType = "notice"
+	EventGroupBanSubTypeBan     EventGroupBanSubType = "ban"
+	EventGroupBanSubTypeLiftBan EventGroupBanSubType = "lift_ban"
 )
 
-type GroupAdminChangeEventNoticeType string
+type EventNoticeSubType string
 
 const (
-	GroupAdminChangeEventNoticeTypeGroupAdmin GroupAdminChangeEventNoticeType = "group_admin"
+	EventNoticeSubTypeGroupPoke      EventNoticeSubType = "poke"
+	EventNoticeSubTypeGroupLuckyKing EventNoticeSubType = "lucky_king"
+	EventNoticeSubTypeGroupHonor     EventNoticeSubType = "honor"
 )
 
-type GroupAdminChangeEventSubType string
+type EventGroupHonorChangeHonorType string
 
 const (
-	GroupAdminChangeEventSubTypeSet   GroupAdminChangeEventSubType = "set"
-	GroupAdminChangeEventSubTypeUnset GroupAdminChangeEventSubType = "unset"
+	EventGroupHonorChangeHonorTypeTalkative EventGroupHonorChangeHonorType = "talkative"
+	EventGroupHonorChangeHonorTypePerformer EventGroupHonorChangeHonorType = "performer"
+	EventGroupHonorChangeHonorTypeEmotion   EventGroupHonorChangeHonorType = "emotion"
 )
 
-type GroupMemberDecreaseEventPostType string
+type EventRequestType string // 请求类型
 
 const (
-	GroupMemberDecreaseEventPostTypeNotice GroupMemberDecreaseEventPostType = "notice"
+	EventRequestTypeFriend EventRequestType = "friend"
+	EventRequestTypeGroup  EventRequestType = "group"
 )
 
-type GroupMemberDecreaseEventNoticeType string
+type EventGroupRequestSubType string
 
 const (
-	GroupMemberDecreaseEventNoticeTypeGroupDecrease GroupMemberDecreaseEventNoticeType = "group_decrease"
+	EventGroupRequestSubTypeAdd    EventGroupRequestSubType = "add"
+	EventGroupRequestSubTypeInvite EventGroupRequestSubType = "invite"
 )
 
-type GroupMemberDecreaseEventSubType string
+type EventMetaType string // 元事件
 
 const (
-	GroupMemberDecreaseEventSubTypeLeave  GroupMemberDecreaseEventSubType = "leave"
-	GroupMemberDecreaseEventSubTypeKick   GroupMemberDecreaseEventSubType = "kick"
-	GroupMemberDecreaseEventSubTypeKickMe GroupMemberDecreaseEventSubType = "kick_me"
+	EventMetaTypeLifecycle EventMetaType = "lifecycle"
+	EventMetaTypeHeartbeat EventMetaType = "heartbeat"
 )
 
-type GroupMemberIncreaseEventPostType string
+type EventLifecycleSubType string
 
 const (
-	GroupMemberIncreaseEventPostTypeNotice GroupMemberIncreaseEventPostType = "notice"
-)
-
-type GroupMemberIncreaseEventNoticeType string
-
-const (
-	GroupMemberIncreaseEventNoticeTypeGroupIncrease GroupMemberIncreaseEventNoticeType = "group_increase"
-)
-
-type GroupMemberIncreaseEventSubType string
-
-const (
-	GroupMemberIncreaseEventSubTypeApprove GroupMemberIncreaseEventSubType = "approve"
-	GroupMemberIncreaseEventSubTypeInvite  GroupMemberIncreaseEventSubType = "invite"
-)
-
-type GroupBanEventPostType string
-
-const (
-	GroupBanEventPostTypeNotice GroupBanEventPostType = "notice"
-)
-
-type GroupBanEventNoticeType string
-
-const (
-	GroupBanEventNoticeTypeGroupBan GroupBanEventNoticeType = "group_ban"
-)
-
-type GroupBanEventSubType string
-
-const (
-	GroupBanEventSubTypeBan     GroupBanEventSubType = "ban"
-	GroupBanEventSubTypeLiftBan GroupBanEventSubType = "lift_ban"
-)
-
-type FriendAddEventPostType string
-
-const (
-	FriendAddEventPostTypeNotice FriendAddEventPostType = "notice"
-)
-
-type FriendAddEventNoticeType string
-
-const (
-	FriendAddEventNoticeTypeFriendAdd FriendAddEventNoticeType = "friend_add"
-)
-
-type GroupRecallEventPostType string
-
-const (
-	GroupRecallEventPostTypeNotice GroupRecallEventPostType = "notice"
-)
-
-type GroupRecallEventNoticeType string
-
-const (
-	GroupRecallEventNoticeTypeGroupRecall GroupRecallEventNoticeType = "group_recall"
-)
-
-type FriendRecallEventPostType string
-
-const (
-	FriendRecallEventPostTypeNotice FriendRecallEventPostType = "notice"
-)
-
-type FriendRecallEventNoticeType string
-
-const (
-	FriendRecallEventNoticeTypeFriendRecall FriendRecallEventNoticeType = "friend_recall"
-)
-
-type GroupPokeEventPostType string
-
-const (
-	GroupPokeEventPostTypeNotice GroupPokeEventPostType = "notice"
-)
-
-type GroupPokeEventNoticeType string
-
-const (
-	GroupPokeEventNoticeTypeNotify GroupPokeEventNoticeType = "notify"
-)
-
-type GroupPokeEventSubType string
-
-const (
-	GroupPokeEventSubTypePoke GroupPokeEventSubType = "poke"
-)
-
-type GroupLuckyKingEventPostType string
-
-const (
-	GroupLuckyKingEventPostTypeNotice GroupLuckyKingEventPostType = "notice"
-)
-
-type GroupLuckyKingEventNoticeType string
-
-const (
-	GroupLuckyKingEventNoticeTypeNotify GroupLuckyKingEventNoticeType = "notify"
-)
-
-type GroupLuckyKingEventSubType string
-
-const (
-	GroupLuckyKingEventSubTypeLuckyKing GroupLuckyKingEventSubType = "lucky_king"
-)
-
-type GroupHonorChangeEventPostType string
-
-const (
-	GroupHonorChangeEventPostTypeNotice GroupHonorChangeEventPostType = "notice"
-)
-
-type GroupHonorChangeEventNoticeType string
-
-const (
-	GroupHonorChangeEventNoticeTypeNotify GroupHonorChangeEventNoticeType = "notify"
-)
-
-type GroupHonorChangeEventSubType string
-
-const (
-	GroupHonorChangeEventSubTypeHonor GroupHonorChangeEventSubType = "honor"
-)
-
-type GroupHonorChangeEventHonorType string
-
-const (
-	GroupHonorChangeEventHonorTypeTalkative GroupHonorChangeEventHonorType = "talkative"
-	GroupHonorChangeEventHonorTypePerformer GroupHonorChangeEventHonorType = "performer"
-	GroupHonorChangeEventHonorTypeEmotion   GroupHonorChangeEventHonorType = "emotion"
-)
-
-type FriendRequestEventPostType string
-
-const (
-	FriendRequestEventPostTypeRequest FriendRequestEventPostType = "request"
-)
-
-type FriendRequestEventRequestType string
-
-const (
-	FriendRequestEventRequestTypeFriend FriendRequestEventRequestType = "friend"
-)
-
-type GroupRequestEventPostType string
-
-const (
-	GroupRequestEventPostTypeRequest GroupRequestEventPostType = "request"
-)
-
-type GroupRequestEventRequestType string
-
-const (
-	GroupRequestEventRequestTypeGroup GroupRequestEventRequestType = "group"
-)
-
-type GroupRequestEventSubType string
-
-const (
-	GroupRequestEventSubTypeAdd    GroupRequestEventSubType = "add"
-	GroupRequestEventSubTypeInvite GroupRequestEventSubType = "invite"
-)
-
-type LifecycleEventPostType string
-
-const (
-	LifecycleEventPostTypeMetaEvent LifecycleEventPostType = "meta_event"
-)
-
-type LifecycleEventMetaEventType string
-
-const (
-	LifecycleEventMetaEventTypeLifecycle LifecycleEventMetaEventType = "lifecycle"
-)
-
-type LifecycleEventSubType string
-
-const (
-	LifecycleEventSubTypeEnable  LifecycleEventSubType = "enable"
-	LifecycleEventSubTypeDisable LifecycleEventSubType = "disable"
-	LifecycleEventSubTypeConnect LifecycleEventSubType = "connect"
-)
-
-type HeartbeatEventPostType string
-
-const (
-	HeartbeatEventPostTypeMetaEvent HeartbeatEventPostType = "meta_event"
-)
-
-type HeartbeatEventMetaEventType string
-
-const (
-	HeartbeatEventMetaEventTypeHeartbeat HeartbeatEventMetaEventType = "heartbeat"
+	EventLifecycleSubTypeEnable  EventLifecycleSubType = "enable"
+	EventLifecycleSubTypeDisable EventLifecycleSubType = "disable"
+	EventLifecycleSubTypeConnect EventLifecycleSubType = "connect"
 )

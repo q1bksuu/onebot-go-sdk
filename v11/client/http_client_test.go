@@ -94,7 +94,7 @@ func TestHTTPClient_do_PostHeadersBody(t *testing.T) {
 	)
 	require.NoError(t, err, "do POST")
 	require.Equal(t, entity.StatusOK, resp.Status)
-	require.Equal(t, entity.ActionResponseRetcode(0), resp.Retcode)
+	require.Equal(t, entity.RetcodeSuccess, resp.Retcode)
 }
 
 func TestHTTPClient_do_StatusNot2xx(t *testing.T) {

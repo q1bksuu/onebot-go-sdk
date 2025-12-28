@@ -38,9 +38,9 @@ func (r *PrivateMessageEvent) SetSelfId(v int64) *PrivateMessageEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: message
-func (r *PrivateMessageEvent) GetPostType() PrivateMessageEventPostType {
+func (r *PrivateMessageEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero PrivateMessageEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -48,16 +48,16 @@ func (r *PrivateMessageEvent) GetPostType() PrivateMessageEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: message
-func (r *PrivateMessageEvent) SetPostType(v PrivateMessageEventPostType) *PrivateMessageEvent {
+func (r *PrivateMessageEvent) SetPostType(v EventPostType) *PrivateMessageEvent {
 	r.PostType = v
 	return r
 }
 
 // GetMessageType
 // 消息类型 | 可能的值: private
-func (r *PrivateMessageEvent) GetMessageType() PrivateMessageEventMessageType {
+func (r *PrivateMessageEvent) GetMessageType() EventMessageType {
 	if r == nil {
-		var zero PrivateMessageEventMessageType
+		var zero EventMessageType
 		return zero
 	}
 	return r.MessageType
@@ -65,16 +65,16 @@ func (r *PrivateMessageEvent) GetMessageType() PrivateMessageEventMessageType {
 
 // SetMessageType
 // 消息类型 | 可能的值: private
-func (r *PrivateMessageEvent) SetMessageType(v PrivateMessageEventMessageType) *PrivateMessageEvent {
+func (r *PrivateMessageEvent) SetMessageType(v EventMessageType) *PrivateMessageEvent {
 	r.MessageType = v
 	return r
 }
 
 // GetSubType
 // 消息子类型，如果是好友则是 `friend`，如果是群临时会话则是 `group` | 可能的值: friend, group, other
-func (r *PrivateMessageEvent) GetSubType() PrivateMessageEventSubType {
+func (r *PrivateMessageEvent) GetSubType() EventPrivateMessageSubType {
 	if r == nil {
-		var zero PrivateMessageEventSubType
+		var zero EventPrivateMessageSubType
 		return zero
 	}
 	return r.SubType
@@ -82,7 +82,7 @@ func (r *PrivateMessageEvent) GetSubType() PrivateMessageEventSubType {
 
 // SetSubType
 // 消息子类型，如果是好友则是 `friend`，如果是群临时会话则是 `group` | 可能的值: friend, group, other
-func (r *PrivateMessageEvent) SetSubType(v PrivateMessageEventSubType) *PrivateMessageEvent {
+func (r *PrivateMessageEvent) SetSubType(v EventPrivateMessageSubType) *PrivateMessageEvent {
 	r.SubType = v
 	return r
 }
@@ -295,9 +295,9 @@ func (r *GroupMessageEvent) SetSelfId(v int64) *GroupMessageEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: message
-func (r *GroupMessageEvent) GetPostType() GroupMessageEventPostType {
+func (r *GroupMessageEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero GroupMessageEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -305,16 +305,16 @@ func (r *GroupMessageEvent) GetPostType() GroupMessageEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: message
-func (r *GroupMessageEvent) SetPostType(v GroupMessageEventPostType) *GroupMessageEvent {
+func (r *GroupMessageEvent) SetPostType(v EventPostType) *GroupMessageEvent {
 	r.PostType = v
 	return r
 }
 
 // GetMessageType
 // 消息类型 | 可能的值: group
-func (r *GroupMessageEvent) GetMessageType() GroupMessageEventMessageType {
+func (r *GroupMessageEvent) GetMessageType() EventMessageType {
 	if r == nil {
-		var zero GroupMessageEventMessageType
+		var zero EventMessageType
 		return zero
 	}
 	return r.MessageType
@@ -322,16 +322,16 @@ func (r *GroupMessageEvent) GetMessageType() GroupMessageEventMessageType {
 
 // SetMessageType
 // 消息类型 | 可能的值: group
-func (r *GroupMessageEvent) SetMessageType(v GroupMessageEventMessageType) *GroupMessageEvent {
+func (r *GroupMessageEvent) SetMessageType(v EventMessageType) *GroupMessageEvent {
 	r.MessageType = v
 	return r
 }
 
 // GetSubType
 // 消息子类型，正常消息是 `normal`，匿名消息是 `anonymous`，系统提示（如「管理员已禁止群内匿名聊天」）是 `notice` | 可能的值: normal, anonymous, notice
-func (r *GroupMessageEvent) GetSubType() GroupMessageEventSubType {
+func (r *GroupMessageEvent) GetSubType() EventGroupMessageSubType {
 	if r == nil {
-		var zero GroupMessageEventSubType
+		var zero EventGroupMessageSubType
 		return zero
 	}
 	return r.SubType
@@ -339,7 +339,7 @@ func (r *GroupMessageEvent) GetSubType() GroupMessageEventSubType {
 
 // SetSubType
 // 消息子类型，正常消息是 `normal`，匿名消息是 `anonymous`，系统提示（如「管理员已禁止群内匿名聊天」）是 `notice` | 可能的值: normal, anonymous, notice
-func (r *GroupMessageEvent) SetSubType(v GroupMessageEventSubType) *GroupMessageEvent {
+func (r *GroupMessageEvent) SetSubType(v EventGroupMessageSubType) *GroupMessageEvent {
 	r.SubType = v
 	return r
 }
@@ -671,9 +671,9 @@ func (r *GroupFileUploadEvent) SetSelfId(v int64) *GroupFileUploadEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupFileUploadEvent) GetPostType() GroupFileUploadEventPostType {
+func (r *GroupFileUploadEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero GroupFileUploadEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -681,16 +681,16 @@ func (r *GroupFileUploadEvent) GetPostType() GroupFileUploadEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupFileUploadEvent) SetPostType(v GroupFileUploadEventPostType) *GroupFileUploadEvent {
+func (r *GroupFileUploadEvent) SetPostType(v EventPostType) *GroupFileUploadEvent {
 	r.PostType = v
 	return r
 }
 
 // GetNoticeType
 // 通知类型 | 可能的值: group_upload
-func (r *GroupFileUploadEvent) GetNoticeType() GroupFileUploadEventNoticeType {
+func (r *GroupFileUploadEvent) GetNoticeType() EventNoticeType {
 	if r == nil {
-		var zero GroupFileUploadEventNoticeType
+		var zero EventNoticeType
 		return zero
 	}
 	return r.NoticeType
@@ -698,7 +698,7 @@ func (r *GroupFileUploadEvent) GetNoticeType() GroupFileUploadEventNoticeType {
 
 // SetNoticeType
 // 通知类型 | 可能的值: group_upload
-func (r *GroupFileUploadEvent) SetNoticeType(v GroupFileUploadEventNoticeType) *GroupFileUploadEvent {
+func (r *GroupFileUploadEvent) SetNoticeType(v EventNoticeType) *GroupFileUploadEvent {
 	r.NoticeType = v
 	return r
 }
@@ -858,9 +858,9 @@ func (r *GroupAdminChangeEvent) SetSelfId(v int64) *GroupAdminChangeEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupAdminChangeEvent) GetPostType() GroupAdminChangeEventPostType {
+func (r *GroupAdminChangeEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero GroupAdminChangeEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -868,16 +868,16 @@ func (r *GroupAdminChangeEvent) GetPostType() GroupAdminChangeEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupAdminChangeEvent) SetPostType(v GroupAdminChangeEventPostType) *GroupAdminChangeEvent {
+func (r *GroupAdminChangeEvent) SetPostType(v EventPostType) *GroupAdminChangeEvent {
 	r.PostType = v
 	return r
 }
 
 // GetNoticeType
 // 通知类型 | 可能的值: group_admin
-func (r *GroupAdminChangeEvent) GetNoticeType() GroupAdminChangeEventNoticeType {
+func (r *GroupAdminChangeEvent) GetNoticeType() EventNoticeType {
 	if r == nil {
-		var zero GroupAdminChangeEventNoticeType
+		var zero EventNoticeType
 		return zero
 	}
 	return r.NoticeType
@@ -885,16 +885,16 @@ func (r *GroupAdminChangeEvent) GetNoticeType() GroupAdminChangeEventNoticeType 
 
 // SetNoticeType
 // 通知类型 | 可能的值: group_admin
-func (r *GroupAdminChangeEvent) SetNoticeType(v GroupAdminChangeEventNoticeType) *GroupAdminChangeEvent {
+func (r *GroupAdminChangeEvent) SetNoticeType(v EventNoticeType) *GroupAdminChangeEvent {
 	r.NoticeType = v
 	return r
 }
 
 // GetSubType
 // 事件子类型，分别表示设置和取消管理员 | 可能的值: set, unset
-func (r *GroupAdminChangeEvent) GetSubType() GroupAdminChangeEventSubType {
+func (r *GroupAdminChangeEvent) GetSubType() EventGroupAdminChangeSubType {
 	if r == nil {
-		var zero GroupAdminChangeEventSubType
+		var zero EventGroupAdminChangeSubType
 		return zero
 	}
 	return r.SubType
@@ -902,7 +902,7 @@ func (r *GroupAdminChangeEvent) GetSubType() GroupAdminChangeEventSubType {
 
 // SetSubType
 // 事件子类型，分别表示设置和取消管理员 | 可能的值: set, unset
-func (r *GroupAdminChangeEvent) SetSubType(v GroupAdminChangeEventSubType) *GroupAdminChangeEvent {
+func (r *GroupAdminChangeEvent) SetSubType(v EventGroupAdminChangeSubType) *GroupAdminChangeEvent {
 	r.SubType = v
 	return r
 }
@@ -977,9 +977,9 @@ func (r *GroupMemberDecreaseEvent) SetSelfId(v int64) *GroupMemberDecreaseEvent 
 
 // GetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupMemberDecreaseEvent) GetPostType() GroupMemberDecreaseEventPostType {
+func (r *GroupMemberDecreaseEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero GroupMemberDecreaseEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -987,16 +987,16 @@ func (r *GroupMemberDecreaseEvent) GetPostType() GroupMemberDecreaseEventPostTyp
 
 // SetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupMemberDecreaseEvent) SetPostType(v GroupMemberDecreaseEventPostType) *GroupMemberDecreaseEvent {
+func (r *GroupMemberDecreaseEvent) SetPostType(v EventPostType) *GroupMemberDecreaseEvent {
 	r.PostType = v
 	return r
 }
 
 // GetNoticeType
 // 通知类型 | 可能的值: group_decrease
-func (r *GroupMemberDecreaseEvent) GetNoticeType() GroupMemberDecreaseEventNoticeType {
+func (r *GroupMemberDecreaseEvent) GetNoticeType() EventNoticeType {
 	if r == nil {
-		var zero GroupMemberDecreaseEventNoticeType
+		var zero EventNoticeType
 		return zero
 	}
 	return r.NoticeType
@@ -1004,16 +1004,16 @@ func (r *GroupMemberDecreaseEvent) GetNoticeType() GroupMemberDecreaseEventNotic
 
 // SetNoticeType
 // 通知类型 | 可能的值: group_decrease
-func (r *GroupMemberDecreaseEvent) SetNoticeType(v GroupMemberDecreaseEventNoticeType) *GroupMemberDecreaseEvent {
+func (r *GroupMemberDecreaseEvent) SetNoticeType(v EventNoticeType) *GroupMemberDecreaseEvent {
 	r.NoticeType = v
 	return r
 }
 
 // GetSubType
 // 事件子类型，分别表示主动退群、成员被踢、登录号被踢 | 可能的值: leave, kick, kick_me
-func (r *GroupMemberDecreaseEvent) GetSubType() GroupMemberDecreaseEventSubType {
+func (r *GroupMemberDecreaseEvent) GetSubType() EventGroupMemberDecreaseSubType {
 	if r == nil {
-		var zero GroupMemberDecreaseEventSubType
+		var zero EventGroupMemberDecreaseSubType
 		return zero
 	}
 	return r.SubType
@@ -1021,7 +1021,7 @@ func (r *GroupMemberDecreaseEvent) GetSubType() GroupMemberDecreaseEventSubType 
 
 // SetSubType
 // 事件子类型，分别表示主动退群、成员被踢、登录号被踢 | 可能的值: leave, kick, kick_me
-func (r *GroupMemberDecreaseEvent) SetSubType(v GroupMemberDecreaseEventSubType) *GroupMemberDecreaseEvent {
+func (r *GroupMemberDecreaseEvent) SetSubType(v EventGroupMemberDecreaseSubType) *GroupMemberDecreaseEvent {
 	r.SubType = v
 	return r
 }
@@ -1113,9 +1113,9 @@ func (r *GroupMemberIncreaseEvent) SetSelfId(v int64) *GroupMemberIncreaseEvent 
 
 // GetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupMemberIncreaseEvent) GetPostType() GroupMemberIncreaseEventPostType {
+func (r *GroupMemberIncreaseEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero GroupMemberIncreaseEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -1123,16 +1123,16 @@ func (r *GroupMemberIncreaseEvent) GetPostType() GroupMemberIncreaseEventPostTyp
 
 // SetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupMemberIncreaseEvent) SetPostType(v GroupMemberIncreaseEventPostType) *GroupMemberIncreaseEvent {
+func (r *GroupMemberIncreaseEvent) SetPostType(v EventPostType) *GroupMemberIncreaseEvent {
 	r.PostType = v
 	return r
 }
 
 // GetNoticeType
 // 通知类型 | 可能的值: group_increase
-func (r *GroupMemberIncreaseEvent) GetNoticeType() GroupMemberIncreaseEventNoticeType {
+func (r *GroupMemberIncreaseEvent) GetNoticeType() EventNoticeType {
 	if r == nil {
-		var zero GroupMemberIncreaseEventNoticeType
+		var zero EventNoticeType
 		return zero
 	}
 	return r.NoticeType
@@ -1140,16 +1140,16 @@ func (r *GroupMemberIncreaseEvent) GetNoticeType() GroupMemberIncreaseEventNotic
 
 // SetNoticeType
 // 通知类型 | 可能的值: group_increase
-func (r *GroupMemberIncreaseEvent) SetNoticeType(v GroupMemberIncreaseEventNoticeType) *GroupMemberIncreaseEvent {
+func (r *GroupMemberIncreaseEvent) SetNoticeType(v EventNoticeType) *GroupMemberIncreaseEvent {
 	r.NoticeType = v
 	return r
 }
 
 // GetSubType
 // 事件子类型，分别表示管理员已同意入群、管理员邀请入群 | 可能的值: approve, invite
-func (r *GroupMemberIncreaseEvent) GetSubType() GroupMemberIncreaseEventSubType {
+func (r *GroupMemberIncreaseEvent) GetSubType() EventGroupMemberIncreaseSubType {
 	if r == nil {
-		var zero GroupMemberIncreaseEventSubType
+		var zero EventGroupMemberIncreaseSubType
 		return zero
 	}
 	return r.SubType
@@ -1157,7 +1157,7 @@ func (r *GroupMemberIncreaseEvent) GetSubType() GroupMemberIncreaseEventSubType 
 
 // SetSubType
 // 事件子类型，分别表示管理员已同意入群、管理员邀请入群 | 可能的值: approve, invite
-func (r *GroupMemberIncreaseEvent) SetSubType(v GroupMemberIncreaseEventSubType) *GroupMemberIncreaseEvent {
+func (r *GroupMemberIncreaseEvent) SetSubType(v EventGroupMemberIncreaseSubType) *GroupMemberIncreaseEvent {
 	r.SubType = v
 	return r
 }
@@ -1249,9 +1249,9 @@ func (r *GroupBanEvent) SetSelfId(v int64) *GroupBanEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupBanEvent) GetPostType() GroupBanEventPostType {
+func (r *GroupBanEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero GroupBanEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -1259,16 +1259,16 @@ func (r *GroupBanEvent) GetPostType() GroupBanEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupBanEvent) SetPostType(v GroupBanEventPostType) *GroupBanEvent {
+func (r *GroupBanEvent) SetPostType(v EventPostType) *GroupBanEvent {
 	r.PostType = v
 	return r
 }
 
 // GetNoticeType
 // 通知类型 | 可能的值: group_ban
-func (r *GroupBanEvent) GetNoticeType() GroupBanEventNoticeType {
+func (r *GroupBanEvent) GetNoticeType() EventNoticeType {
 	if r == nil {
-		var zero GroupBanEventNoticeType
+		var zero EventNoticeType
 		return zero
 	}
 	return r.NoticeType
@@ -1276,16 +1276,16 @@ func (r *GroupBanEvent) GetNoticeType() GroupBanEventNoticeType {
 
 // SetNoticeType
 // 通知类型 | 可能的值: group_ban
-func (r *GroupBanEvent) SetNoticeType(v GroupBanEventNoticeType) *GroupBanEvent {
+func (r *GroupBanEvent) SetNoticeType(v EventNoticeType) *GroupBanEvent {
 	r.NoticeType = v
 	return r
 }
 
 // GetSubType
 // 事件子类型，分别表示禁言、解除禁言 | 可能的值: ban, lift_ban
-func (r *GroupBanEvent) GetSubType() GroupBanEventSubType {
+func (r *GroupBanEvent) GetSubType() EventGroupBanSubType {
 	if r == nil {
-		var zero GroupBanEventSubType
+		var zero EventGroupBanSubType
 		return zero
 	}
 	return r.SubType
@@ -1293,7 +1293,7 @@ func (r *GroupBanEvent) GetSubType() GroupBanEventSubType {
 
 // SetSubType
 // 事件子类型，分别表示禁言、解除禁言 | 可能的值: ban, lift_ban
-func (r *GroupBanEvent) SetSubType(v GroupBanEventSubType) *GroupBanEvent {
+func (r *GroupBanEvent) SetSubType(v EventGroupBanSubType) *GroupBanEvent {
 	r.SubType = v
 	return r
 }
@@ -1402,9 +1402,9 @@ func (r *FriendAddEvent) SetSelfId(v int64) *FriendAddEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: notice
-func (r *FriendAddEvent) GetPostType() FriendAddEventPostType {
+func (r *FriendAddEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero FriendAddEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -1412,16 +1412,16 @@ func (r *FriendAddEvent) GetPostType() FriendAddEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: notice
-func (r *FriendAddEvent) SetPostType(v FriendAddEventPostType) *FriendAddEvent {
+func (r *FriendAddEvent) SetPostType(v EventPostType) *FriendAddEvent {
 	r.PostType = v
 	return r
 }
 
 // GetNoticeType
 // 通知类型 | 可能的值: friend_add
-func (r *FriendAddEvent) GetNoticeType() FriendAddEventNoticeType {
+func (r *FriendAddEvent) GetNoticeType() EventNoticeType {
 	if r == nil {
-		var zero FriendAddEventNoticeType
+		var zero EventNoticeType
 		return zero
 	}
 	return r.NoticeType
@@ -1429,7 +1429,7 @@ func (r *FriendAddEvent) GetNoticeType() FriendAddEventNoticeType {
 
 // SetNoticeType
 // 通知类型 | 可能的值: friend_add
-func (r *FriendAddEvent) SetNoticeType(v FriendAddEventNoticeType) *FriendAddEvent {
+func (r *FriendAddEvent) SetNoticeType(v EventNoticeType) *FriendAddEvent {
 	r.NoticeType = v
 	return r
 }
@@ -1487,9 +1487,9 @@ func (r *GroupRecallEvent) SetSelfId(v int64) *GroupRecallEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupRecallEvent) GetPostType() GroupRecallEventPostType {
+func (r *GroupRecallEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero GroupRecallEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -1497,16 +1497,16 @@ func (r *GroupRecallEvent) GetPostType() GroupRecallEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupRecallEvent) SetPostType(v GroupRecallEventPostType) *GroupRecallEvent {
+func (r *GroupRecallEvent) SetPostType(v EventPostType) *GroupRecallEvent {
 	r.PostType = v
 	return r
 }
 
 // GetNoticeType
 // 通知类型 | 可能的值: group_recall
-func (r *GroupRecallEvent) GetNoticeType() GroupRecallEventNoticeType {
+func (r *GroupRecallEvent) GetNoticeType() EventNoticeType {
 	if r == nil {
-		var zero GroupRecallEventNoticeType
+		var zero EventNoticeType
 		return zero
 	}
 	return r.NoticeType
@@ -1514,7 +1514,7 @@ func (r *GroupRecallEvent) GetNoticeType() GroupRecallEventNoticeType {
 
 // SetNoticeType
 // 通知类型 | 可能的值: group_recall
-func (r *GroupRecallEvent) SetNoticeType(v GroupRecallEventNoticeType) *GroupRecallEvent {
+func (r *GroupRecallEvent) SetNoticeType(v EventNoticeType) *GroupRecallEvent {
 	r.NoticeType = v
 	return r
 }
@@ -1623,9 +1623,9 @@ func (r *FriendRecallEvent) SetSelfId(v int64) *FriendRecallEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: notice
-func (r *FriendRecallEvent) GetPostType() FriendRecallEventPostType {
+func (r *FriendRecallEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero FriendRecallEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -1633,16 +1633,16 @@ func (r *FriendRecallEvent) GetPostType() FriendRecallEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: notice
-func (r *FriendRecallEvent) SetPostType(v FriendRecallEventPostType) *FriendRecallEvent {
+func (r *FriendRecallEvent) SetPostType(v EventPostType) *FriendRecallEvent {
 	r.PostType = v
 	return r
 }
 
 // GetNoticeType
 // 通知类型 | 可能的值: friend_recall
-func (r *FriendRecallEvent) GetNoticeType() FriendRecallEventNoticeType {
+func (r *FriendRecallEvent) GetNoticeType() EventNoticeType {
 	if r == nil {
-		var zero FriendRecallEventNoticeType
+		var zero EventNoticeType
 		return zero
 	}
 	return r.NoticeType
@@ -1650,7 +1650,7 @@ func (r *FriendRecallEvent) GetNoticeType() FriendRecallEventNoticeType {
 
 // SetNoticeType
 // 通知类型 | 可能的值: friend_recall
-func (r *FriendRecallEvent) SetNoticeType(v FriendRecallEventNoticeType) *FriendRecallEvent {
+func (r *FriendRecallEvent) SetNoticeType(v EventNoticeType) *FriendRecallEvent {
 	r.NoticeType = v
 	return r
 }
@@ -1725,9 +1725,9 @@ func (r *GroupPokeEvent) SetSelfId(v int64) *GroupPokeEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupPokeEvent) GetPostType() GroupPokeEventPostType {
+func (r *GroupPokeEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero GroupPokeEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -1735,16 +1735,16 @@ func (r *GroupPokeEvent) GetPostType() GroupPokeEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupPokeEvent) SetPostType(v GroupPokeEventPostType) *GroupPokeEvent {
+func (r *GroupPokeEvent) SetPostType(v EventPostType) *GroupPokeEvent {
 	r.PostType = v
 	return r
 }
 
 // GetNoticeType
 // 消息类型 | 可能的值: notify
-func (r *GroupPokeEvent) GetNoticeType() GroupPokeEventNoticeType {
+func (r *GroupPokeEvent) GetNoticeType() EventNoticeType {
 	if r == nil {
-		var zero GroupPokeEventNoticeType
+		var zero EventNoticeType
 		return zero
 	}
 	return r.NoticeType
@@ -1752,16 +1752,16 @@ func (r *GroupPokeEvent) GetNoticeType() GroupPokeEventNoticeType {
 
 // SetNoticeType
 // 消息类型 | 可能的值: notify
-func (r *GroupPokeEvent) SetNoticeType(v GroupPokeEventNoticeType) *GroupPokeEvent {
+func (r *GroupPokeEvent) SetNoticeType(v EventNoticeType) *GroupPokeEvent {
 	r.NoticeType = v
 	return r
 }
 
 // GetSubType
 // 提示类型 | 可能的值: poke
-func (r *GroupPokeEvent) GetSubType() GroupPokeEventSubType {
+func (r *GroupPokeEvent) GetSubType() EventNoticeSubType {
 	if r == nil {
-		var zero GroupPokeEventSubType
+		var zero EventNoticeSubType
 		return zero
 	}
 	return r.SubType
@@ -1769,7 +1769,7 @@ func (r *GroupPokeEvent) GetSubType() GroupPokeEventSubType {
 
 // SetSubType
 // 提示类型 | 可能的值: poke
-func (r *GroupPokeEvent) SetSubType(v GroupPokeEventSubType) *GroupPokeEvent {
+func (r *GroupPokeEvent) SetSubType(v EventNoticeSubType) *GroupPokeEvent {
 	r.SubType = v
 	return r
 }
@@ -1861,9 +1861,9 @@ func (r *GroupLuckyKingEvent) SetSelfId(v int64) *GroupLuckyKingEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupLuckyKingEvent) GetPostType() GroupLuckyKingEventPostType {
+func (r *GroupLuckyKingEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero GroupLuckyKingEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -1871,16 +1871,16 @@ func (r *GroupLuckyKingEvent) GetPostType() GroupLuckyKingEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupLuckyKingEvent) SetPostType(v GroupLuckyKingEventPostType) *GroupLuckyKingEvent {
+func (r *GroupLuckyKingEvent) SetPostType(v EventPostType) *GroupLuckyKingEvent {
 	r.PostType = v
 	return r
 }
 
 // GetNoticeType
 // 消息类型 | 可能的值: notify
-func (r *GroupLuckyKingEvent) GetNoticeType() GroupLuckyKingEventNoticeType {
+func (r *GroupLuckyKingEvent) GetNoticeType() EventNoticeType {
 	if r == nil {
-		var zero GroupLuckyKingEventNoticeType
+		var zero EventNoticeType
 		return zero
 	}
 	return r.NoticeType
@@ -1888,16 +1888,16 @@ func (r *GroupLuckyKingEvent) GetNoticeType() GroupLuckyKingEventNoticeType {
 
 // SetNoticeType
 // 消息类型 | 可能的值: notify
-func (r *GroupLuckyKingEvent) SetNoticeType(v GroupLuckyKingEventNoticeType) *GroupLuckyKingEvent {
+func (r *GroupLuckyKingEvent) SetNoticeType(v EventNoticeType) *GroupLuckyKingEvent {
 	r.NoticeType = v
 	return r
 }
 
 // GetSubType
 // 提示类型 | 可能的值: lucky_king
-func (r *GroupLuckyKingEvent) GetSubType() GroupLuckyKingEventSubType {
+func (r *GroupLuckyKingEvent) GetSubType() EventNoticeSubType {
 	if r == nil {
-		var zero GroupLuckyKingEventSubType
+		var zero EventNoticeSubType
 		return zero
 	}
 	return r.SubType
@@ -1905,7 +1905,7 @@ func (r *GroupLuckyKingEvent) GetSubType() GroupLuckyKingEventSubType {
 
 // SetSubType
 // 提示类型 | 可能的值: lucky_king
-func (r *GroupLuckyKingEvent) SetSubType(v GroupLuckyKingEventSubType) *GroupLuckyKingEvent {
+func (r *GroupLuckyKingEvent) SetSubType(v EventNoticeSubType) *GroupLuckyKingEvent {
 	r.SubType = v
 	return r
 }
@@ -1997,9 +1997,9 @@ func (r *GroupHonorChangeEvent) SetSelfId(v int64) *GroupHonorChangeEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupHonorChangeEvent) GetPostType() GroupHonorChangeEventPostType {
+func (r *GroupHonorChangeEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero GroupHonorChangeEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -2007,16 +2007,16 @@ func (r *GroupHonorChangeEvent) GetPostType() GroupHonorChangeEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: notice
-func (r *GroupHonorChangeEvent) SetPostType(v GroupHonorChangeEventPostType) *GroupHonorChangeEvent {
+func (r *GroupHonorChangeEvent) SetPostType(v EventPostType) *GroupHonorChangeEvent {
 	r.PostType = v
 	return r
 }
 
 // GetNoticeType
 // 消息类型 | 可能的值: notify
-func (r *GroupHonorChangeEvent) GetNoticeType() GroupHonorChangeEventNoticeType {
+func (r *GroupHonorChangeEvent) GetNoticeType() EventNoticeType {
 	if r == nil {
-		var zero GroupHonorChangeEventNoticeType
+		var zero EventNoticeType
 		return zero
 	}
 	return r.NoticeType
@@ -2024,16 +2024,16 @@ func (r *GroupHonorChangeEvent) GetNoticeType() GroupHonorChangeEventNoticeType 
 
 // SetNoticeType
 // 消息类型 | 可能的值: notify
-func (r *GroupHonorChangeEvent) SetNoticeType(v GroupHonorChangeEventNoticeType) *GroupHonorChangeEvent {
+func (r *GroupHonorChangeEvent) SetNoticeType(v EventNoticeType) *GroupHonorChangeEvent {
 	r.NoticeType = v
 	return r
 }
 
 // GetSubType
 // 提示类型 | 可能的值: honor
-func (r *GroupHonorChangeEvent) GetSubType() GroupHonorChangeEventSubType {
+func (r *GroupHonorChangeEvent) GetSubType() EventNoticeSubType {
 	if r == nil {
-		var zero GroupHonorChangeEventSubType
+		var zero EventNoticeSubType
 		return zero
 	}
 	return r.SubType
@@ -2041,7 +2041,7 @@ func (r *GroupHonorChangeEvent) GetSubType() GroupHonorChangeEventSubType {
 
 // SetSubType
 // 提示类型 | 可能的值: honor
-func (r *GroupHonorChangeEvent) SetSubType(v GroupHonorChangeEventSubType) *GroupHonorChangeEvent {
+func (r *GroupHonorChangeEvent) SetSubType(v EventNoticeSubType) *GroupHonorChangeEvent {
 	r.SubType = v
 	return r
 }
@@ -2065,9 +2065,9 @@ func (r *GroupHonorChangeEvent) SetGroupId(v int64) *GroupHonorChangeEvent {
 
 // GetHonorType
 // 荣誉类型，分别表示龙王、群聊之火、快乐源泉 | 可能的值: talkative, performer, emotion
-func (r *GroupHonorChangeEvent) GetHonorType() GroupHonorChangeEventHonorType {
+func (r *GroupHonorChangeEvent) GetHonorType() EventGroupHonorChangeHonorType {
 	if r == nil {
-		var zero GroupHonorChangeEventHonorType
+		var zero EventGroupHonorChangeHonorType
 		return zero
 	}
 	return r.HonorType
@@ -2075,7 +2075,7 @@ func (r *GroupHonorChangeEvent) GetHonorType() GroupHonorChangeEventHonorType {
 
 // SetHonorType
 // 荣誉类型，分别表示龙王、群聊之火、快乐源泉 | 可能的值: talkative, performer, emotion
-func (r *GroupHonorChangeEvent) SetHonorType(v GroupHonorChangeEventHonorType) *GroupHonorChangeEvent {
+func (r *GroupHonorChangeEvent) SetHonorType(v EventGroupHonorChangeHonorType) *GroupHonorChangeEvent {
 	r.HonorType = v
 	return r
 }
@@ -2133,9 +2133,9 @@ func (r *FriendRequestEvent) SetSelfId(v int64) *FriendRequestEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: request
-func (r *FriendRequestEvent) GetPostType() FriendRequestEventPostType {
+func (r *FriendRequestEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero FriendRequestEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -2143,16 +2143,16 @@ func (r *FriendRequestEvent) GetPostType() FriendRequestEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: request
-func (r *FriendRequestEvent) SetPostType(v FriendRequestEventPostType) *FriendRequestEvent {
+func (r *FriendRequestEvent) SetPostType(v EventPostType) *FriendRequestEvent {
 	r.PostType = v
 	return r
 }
 
 // GetRequestType
 // 请求类型 | 可能的值: friend
-func (r *FriendRequestEvent) GetRequestType() FriendRequestEventRequestType {
+func (r *FriendRequestEvent) GetRequestType() EventRequestType {
 	if r == nil {
-		var zero FriendRequestEventRequestType
+		var zero EventRequestType
 		return zero
 	}
 	return r.RequestType
@@ -2160,7 +2160,7 @@ func (r *FriendRequestEvent) GetRequestType() FriendRequestEventRequestType {
 
 // SetRequestType
 // 请求类型 | 可能的值: friend
-func (r *FriendRequestEvent) SetRequestType(v FriendRequestEventRequestType) *FriendRequestEvent {
+func (r *FriendRequestEvent) SetRequestType(v EventRequestType) *FriendRequestEvent {
 	r.RequestType = v
 	return r
 }
@@ -2252,9 +2252,9 @@ func (r *GroupRequestEvent) SetSelfId(v int64) *GroupRequestEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: request
-func (r *GroupRequestEvent) GetPostType() GroupRequestEventPostType {
+func (r *GroupRequestEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero GroupRequestEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -2262,16 +2262,16 @@ func (r *GroupRequestEvent) GetPostType() GroupRequestEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: request
-func (r *GroupRequestEvent) SetPostType(v GroupRequestEventPostType) *GroupRequestEvent {
+func (r *GroupRequestEvent) SetPostType(v EventPostType) *GroupRequestEvent {
 	r.PostType = v
 	return r
 }
 
 // GetRequestType
 // 请求类型 | 可能的值: group
-func (r *GroupRequestEvent) GetRequestType() GroupRequestEventRequestType {
+func (r *GroupRequestEvent) GetRequestType() EventRequestType {
 	if r == nil {
-		var zero GroupRequestEventRequestType
+		var zero EventRequestType
 		return zero
 	}
 	return r.RequestType
@@ -2279,16 +2279,16 @@ func (r *GroupRequestEvent) GetRequestType() GroupRequestEventRequestType {
 
 // SetRequestType
 // 请求类型 | 可能的值: group
-func (r *GroupRequestEvent) SetRequestType(v GroupRequestEventRequestType) *GroupRequestEvent {
+func (r *GroupRequestEvent) SetRequestType(v EventRequestType) *GroupRequestEvent {
 	r.RequestType = v
 	return r
 }
 
 // GetSubType
 // 请求子类型，分别表示加群请求、邀请登录号入群 | 可能的值: add, invite
-func (r *GroupRequestEvent) GetSubType() GroupRequestEventSubType {
+func (r *GroupRequestEvent) GetSubType() EventGroupRequestSubType {
 	if r == nil {
-		var zero GroupRequestEventSubType
+		var zero EventGroupRequestSubType
 		return zero
 	}
 	return r.SubType
@@ -2296,7 +2296,7 @@ func (r *GroupRequestEvent) GetSubType() GroupRequestEventSubType {
 
 // SetSubType
 // 请求子类型，分别表示加群请求、邀请登录号入群 | 可能的值: add, invite
-func (r *GroupRequestEvent) SetSubType(v GroupRequestEventSubType) *GroupRequestEvent {
+func (r *GroupRequestEvent) SetSubType(v EventGroupRequestSubType) *GroupRequestEvent {
 	r.SubType = v
 	return r
 }
@@ -2405,9 +2405,9 @@ func (r *LifecycleEvent) SetSelfId(v int64) *LifecycleEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: meta_event
-func (r *LifecycleEvent) GetPostType() LifecycleEventPostType {
+func (r *LifecycleEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero LifecycleEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -2415,16 +2415,16 @@ func (r *LifecycleEvent) GetPostType() LifecycleEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: meta_event
-func (r *LifecycleEvent) SetPostType(v LifecycleEventPostType) *LifecycleEvent {
+func (r *LifecycleEvent) SetPostType(v EventPostType) *LifecycleEvent {
 	r.PostType = v
 	return r
 }
 
 // GetMetaEventType
 // 元事件类型 | 可能的值: lifecycle
-func (r *LifecycleEvent) GetMetaEventType() LifecycleEventMetaEventType {
+func (r *LifecycleEvent) GetMetaEventType() EventMetaType {
 	if r == nil {
-		var zero LifecycleEventMetaEventType
+		var zero EventMetaType
 		return zero
 	}
 	return r.MetaEventType
@@ -2432,16 +2432,16 @@ func (r *LifecycleEvent) GetMetaEventType() LifecycleEventMetaEventType {
 
 // SetMetaEventType
 // 元事件类型 | 可能的值: lifecycle
-func (r *LifecycleEvent) SetMetaEventType(v LifecycleEventMetaEventType) *LifecycleEvent {
+func (r *LifecycleEvent) SetMetaEventType(v EventMetaType) *LifecycleEvent {
 	r.MetaEventType = v
 	return r
 }
 
 // GetSubType
 // 事件子类型，分别表示 OneBot 启用、停用、WebSocket 连接成功 | 可能的值: enable, disable, connect
-func (r *LifecycleEvent) GetSubType() LifecycleEventSubType {
+func (r *LifecycleEvent) GetSubType() EventLifecycleSubType {
 	if r == nil {
-		var zero LifecycleEventSubType
+		var zero EventLifecycleSubType
 		return zero
 	}
 	return r.SubType
@@ -2449,7 +2449,7 @@ func (r *LifecycleEvent) GetSubType() LifecycleEventSubType {
 
 // SetSubType
 // 事件子类型，分别表示 OneBot 启用、停用、WebSocket 连接成功 | 可能的值: enable, disable, connect
-func (r *LifecycleEvent) SetSubType(v LifecycleEventSubType) *LifecycleEvent {
+func (r *LifecycleEvent) SetSubType(v EventLifecycleSubType) *LifecycleEvent {
 	r.SubType = v
 	return r
 }
@@ -2490,9 +2490,9 @@ func (r *HeartbeatEvent) SetSelfId(v int64) *HeartbeatEvent {
 
 // GetPostType
 // 上报类型 | 可能的值: meta_event
-func (r *HeartbeatEvent) GetPostType() HeartbeatEventPostType {
+func (r *HeartbeatEvent) GetPostType() EventPostType {
 	if r == nil {
-		var zero HeartbeatEventPostType
+		var zero EventPostType
 		return zero
 	}
 	return r.PostType
@@ -2500,16 +2500,16 @@ func (r *HeartbeatEvent) GetPostType() HeartbeatEventPostType {
 
 // SetPostType
 // 上报类型 | 可能的值: meta_event
-func (r *HeartbeatEvent) SetPostType(v HeartbeatEventPostType) *HeartbeatEvent {
+func (r *HeartbeatEvent) SetPostType(v EventPostType) *HeartbeatEvent {
 	r.PostType = v
 	return r
 }
 
 // GetMetaEventType
 // 元事件类型 | 可能的值: heartbeat
-func (r *HeartbeatEvent) GetMetaEventType() HeartbeatEventMetaEventType {
+func (r *HeartbeatEvent) GetMetaEventType() EventMetaType {
 	if r == nil {
-		var zero HeartbeatEventMetaEventType
+		var zero EventMetaType
 		return zero
 	}
 	return r.MetaEventType
@@ -2517,7 +2517,7 @@ func (r *HeartbeatEvent) GetMetaEventType() HeartbeatEventMetaEventType {
 
 // SetMetaEventType
 // 元事件类型 | 可能的值: heartbeat
-func (r *HeartbeatEvent) SetMetaEventType(v HeartbeatEventMetaEventType) *HeartbeatEvent {
+func (r *HeartbeatEvent) SetMetaEventType(v EventMetaType) *HeartbeatEvent {
 	r.MetaEventType = v
 	return r
 }
