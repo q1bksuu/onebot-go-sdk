@@ -234,7 +234,7 @@ func RegisterGenerated(d *Dispatcher, svc {{.CombinedService.Name}}) {
 {{- range .Groups}}
     // Group: {{.Name}}
 {{- range .Actions}}
-    d.Register("{{.Action}}", NewBinder[{{.Request}}, {{.Response}}]("{{.Action}}", svc.{{.Method}}).Handler())
+    d.Register("{{.Action}}", APIFuncToActionHandler(svc.{{.Method}}))
 {{- end}}
 {{end}}
 }
