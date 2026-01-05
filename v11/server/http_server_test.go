@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/q1bksuu/onebot-go-sdk/v11/dispatcher"
 	"github.com/q1bksuu/onebot-go-sdk/v11/entity"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -28,7 +29,7 @@ func TestNewHTTPServer_PathPrefixNormalizeAndHandler(t *testing.T) {
 		Addr:          ":0",
 		APIPathPrefix: "api", // 不带斜杠
 	}
-	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+	server := NewHTTPServer(cfg, WithActionHandler(dispatcher.ActionRequestHandlerFunc(
 		func(_ context.Context, req *entity.ActionRequest) (*entity.ActionRawResponse, error) {
 			// 简单回显 action，便于断言
 			require.Equal(t, "test_action", req.Action)
@@ -59,7 +60,7 @@ func TestNewHTTPServer_PathPrefixNormalizeAndHandler(t *testing.T) {
 	assert.Equal(t, entity.RetcodeSuccess, resp.Retcode)
 }
 
-func newTestServer(cfg HTTPConfig, handler ActionRequestHandlerFunc) *HTTPServer {
+func newTestServer(cfg HTTPConfig, handler dispatcher.ActionRequestHandlerFunc) *HTTPServer {
 	if cfg.APIPathPrefix == "" {
 		cfg.APIPathPrefix = "/"
 	}
@@ -248,7 +249,7 @@ func TestHTTPServer_WriteError_Mapping(t *testing.T) {
 		err        error
 		wantStatus int
 	}{
-		{"not found", ErrActionNotFound, http.StatusNotFound},
+		{"not found", dispatcher.ErrActionNotFound, http.StatusNotFound},
 		{"bad request", ErrBadRequest, http.StatusBadRequest},
 		{"internal", errOther, http.StatusInternalServerError},
 	}
@@ -304,7 +305,7 @@ func TestHTTPServer_StartAndShutdown_ContextCancel(t *testing.T) {
 		Addr:          "127.0.0.1:0",
 		APIPathPrefix: "/onebot",
 	}
-	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+	server := NewHTTPServer(cfg, WithActionHandler(dispatcher.ActionRequestHandlerFunc(
 		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
 			return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
 		},
@@ -347,7 +348,7 @@ func TestHTTPServer_EventPath_Registration(t *testing.T) {
 		return map[string]any{"reply": "test"}, nil
 	})
 
-	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+	server := NewHTTPServer(cfg, WithActionHandler(dispatcher.ActionRequestHandlerFunc(
 		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
 			return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
 		})), WithEventHandler(eventHandler))
@@ -394,7 +395,7 @@ func TestHTTPServer_EventPath_NoHandler_Returns204(t *testing.T) {
 		Addr:      ":0",
 		EventPath: "/event",
 	}
-	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+	server := NewHTTPServer(cfg, WithActionHandler(dispatcher.ActionRequestHandlerFunc(
 		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
 			return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
 		})))
@@ -432,7 +433,7 @@ func TestHTTPServer_EventPath_OnlyAcceptsPOST(t *testing.T) {
 		return nil, nil
 	})
 
-	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+	server := NewHTTPServer(cfg, WithActionHandler(dispatcher.ActionRequestHandlerFunc(
 		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
 			//nolint:nilnil // 测试代码中返回 nil, nil 用于测试默认行为
 			return nil, nil
@@ -457,7 +458,7 @@ func TestHTTPServer_EventPath_InvalidJSON_Returns400(t *testing.T) {
 		return nil, nil
 	})
 
-	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+	server := NewHTTPServer(cfg, WithActionHandler(dispatcher.ActionRequestHandlerFunc(
 		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
 			//nolint:nilnil // 测试代码中返回 nil, nil 用于测试默认行为
 			return nil, nil
@@ -483,7 +484,7 @@ func TestHTTPServer_EventPath_EmptyQuickOp_Returns204(t *testing.T) {
 		return nil, nil
 	})
 
-	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+	server := NewHTTPServer(cfg, WithActionHandler(dispatcher.ActionRequestHandlerFunc(
 		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
 			//nolint:nilnil // 测试代码中返回 nil, nil 用于测试默认行为
 			return nil, nil
@@ -586,24 +587,24 @@ func TestHTTPServer_EventPath_AllEventTypes(t *testing.T) {
 		EventPath: "/event",
 	}
 
-	dispatcher := NewEventDispatcher()
-	dispatcher.Register("message/private", func(_ context.Context, _ entity.Event) (map[string]any, error) {
+	eventDisp := NewEventDispatcher()
+	eventDisp.Register("message/private", func(_ context.Context, _ entity.Event) (map[string]any, error) {
 		return map[string]any{"reply": "private"}, nil
 	})
-	dispatcher.Register("notice/group_upload", func(_ context.Context, _ entity.Event) (map[string]any, error) {
+	eventDisp.Register("notice/group_upload", func(_ context.Context, _ entity.Event) (map[string]any, error) {
 		return map[string]any{"reply": "upload"}, nil
 	})
-	dispatcher.Register("request/friend", func(_ context.Context, _ entity.Event) (map[string]any, error) {
+	eventDisp.Register("request/friend", func(_ context.Context, _ entity.Event) (map[string]any, error) {
 		return map[string]any{"approve": true}, nil
 	})
-	dispatcher.Register("meta_event/lifecycle", func(_ context.Context, _ entity.Event) (map[string]any, error) {
+	eventDisp.Register("meta_event/lifecycle", func(_ context.Context, _ entity.Event) (map[string]any, error) {
 		return map[string]any{}, nil
 	})
 
-	server := NewHTTPServer(cfg, WithActionHandler(ActionRequestHandlerFunc(
+	server := NewHTTPServer(cfg, WithActionHandler(dispatcher.ActionRequestHandlerFunc(
 		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
 			return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
-		})), WithEventHandler(dispatcher))
+		})), WithEventHandler(eventDisp))
 
 	for _, testCase := range eventPathTestCases {
 		t.Run(testCase.name, func(t *testing.T) {

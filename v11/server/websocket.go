@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/q1bksuu/onebot-go-sdk/v11/dispatcher"
 	"github.com/q1bksuu/onebot-go-sdk/v11/internal/util"
 
 	"github.com/q1bksuu/onebot-go-sdk/v11/entity"
@@ -46,9 +47,10 @@ func (c *wsConn) writeJSON(v any) error {
 
 // WebSocketServer 实现 OneBot 正向 WebSocket 传输层.
 type WebSocketServer struct {
-	srv      *http.Server
+	*BaseServer
+
 	cfg      WSConfig
-	handler  ActionRequestHandler
+	handler  dispatcher.ActionRequestHandler
 	upgrader websocket.Upgrader
 
 	mu            sync.Mutex
@@ -57,7 +59,7 @@ type WebSocketServer struct {
 }
 
 // NewWebSocketServer 创建 WebSocketServer. 若传入 CheckOrigin 为 nil，则允许任意来源.
-func NewWebSocketServer(cfg WSConfig, handler ActionRequestHandler) *WebSocketServer {
+func NewWebSocketServer(cfg WSConfig, handler dispatcher.ActionRequestHandler) *WebSocketServer {
 	prefix := util.NormalizePath(cfg.PathPrefix)
 
 	upgrader := websocket.Upgrader{CheckOrigin: cfg.CheckOrigin}
@@ -86,51 +88,36 @@ func NewWebSocketServer(cfg WSConfig, handler ActionRequestHandler) *WebSocketSe
 
 	mux.HandleFunc(universalPath, server.handleUniversal)
 
-	server.srv = &http.Server{
+	baseCfg := ServerConfig{
 		Addr:         cfg.Addr,
-		Handler:      mux,
 		ReadTimeout:  cfg.ReadTimeout,
 		WriteTimeout: cfg.WriteTimeout,
 		IdleTimeout:  cfg.IdleTimeout,
 	}
+	server.BaseServer = NewBaseServer(baseCfg, mux)
 
 	return server
 }
 
 // Start 启动 WebSocket 服务器（异步监听）.
 func (s *WebSocketServer) Start(ctx context.Context) error {
-	errCh := make(chan error, 1)
+	return s.BaseServer.Start(ctx, func(context.Context) error {
+		s.closeAllConns()
 
-	go func() {
-		err := s.srv.ListenAndServe()
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			errCh <- err
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-		// 使用独立的上下文执行 shutdown，确保即使原上下文已取消也能完成关闭
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		//nolint:contextcheck // 需要独立的上下文来执行 shutdown
-		return s.Shutdown(shutdownCtx)
-	case err := <-errCh:
-		return err
-	}
+		return nil
+	})
 }
 
 // Shutdown 优雅关闭，关闭所有连接.
 func (s *WebSocketServer) Shutdown(ctx context.Context) error {
 	s.closeAllConns()
 
-	err := s.srv.Shutdown(ctx)
-	if err != nil {
-		return fmt.Errorf("server shutdown failed: %w", err)
-	}
+	return s.BaseServer.Shutdown(ctx)
+}
 
-	return nil
+// Handler 返回 http.Handler，便于挂载到外部路由.
+func (s *WebSocketServer) Handler() http.Handler {
+	return s.Srv.Handler
 }
 
 // BroadcastEvent 推送事件.
@@ -268,29 +255,17 @@ func (s *WebSocketServer) serveActionConn(ctx context.Context, wsC *wsConn, trac
 	}
 }
 
-type actionRequestEnvelope struct {
-	Action string          `json:"action"`
-	Params map[string]any  `json:"params"`
-	Echo   json.RawMessage `json:"echo,omitempty"`
-}
-
-type actionResponseEnvelope struct {
-	Status  entity.ActionResponseStatus  `json:"status"`
-	Retcode entity.ActionResponseRetcode `json:"retcode"`
-	Data    json.RawMessage              `json:"data,omitempty"`
-	Message string                       `json:"message,omitempty"`
-	Echo    json.RawMessage              `json:"echo,omitempty"`
-}
-
-func (s *WebSocketServer) handleActionMessage(ctx context.Context, data []byte) *actionResponseEnvelope {
-	var reqEnv actionRequestEnvelope
+func (s *WebSocketServer) handleActionMessage(ctx context.Context, data []byte) *entity.ActionResponseEnvelope {
+	var reqEnv entity.ActionRequestEnvelope
 
 	err := json.Unmarshal(data, &reqEnv)
 	if err != nil {
-		return &actionResponseEnvelope{
-			Status:  entity.StatusFailed,
-			Retcode: entity.ActionResponseRetcode(1400),
-			Message: "invalid json",
+		return &entity.ActionResponseEnvelope{
+			ActionRawResponse: entity.ActionRawResponse{
+				Status:  entity.StatusFailed,
+				Retcode: entity.ActionResponseRetcode(1400),
+				Message: "invalid json",
+			},
 		}
 	}
 
@@ -300,12 +275,9 @@ func (s *WebSocketServer) handleActionMessage(ctx context.Context, data []byte) 
 	if err != nil {
 		mapped := mapHandlerError(err)
 
-		return &actionResponseEnvelope{
-			Status:  mapped.Status,
-			Retcode: mapped.Retcode,
-			Data:    mapped.Data,
-			Message: mapped.Message,
-			Echo:    reqEnv.Echo,
+		return &entity.ActionResponseEnvelope{
+			ActionRawResponse: *mapped,
+			Echo:              reqEnv.Echo,
 		}
 	}
 
@@ -313,16 +285,13 @@ func (s *WebSocketServer) handleActionMessage(ctx context.Context, data []byte) 
 		resp = &entity.ActionRawResponse{Status: entity.StatusFailed, Retcode: -1, Message: "empty response"}
 	}
 
-	return &actionResponseEnvelope{
-		Status:  resp.Status,
-		Retcode: resp.Retcode,
-		Data:    resp.Data,
-		Message: resp.Message,
-		Echo:    reqEnv.Echo,
+	return &entity.ActionResponseEnvelope{
+		ActionRawResponse: *resp,
+		Echo:              reqEnv.Echo,
 	}
 }
 
-func (s *WebSocketServer) checkAccess(r *http.Request) *actionResponseEnvelope {
+func (s *WebSocketServer) checkAccess(r *http.Request) *entity.ActionResponseEnvelope {
 	if s.cfg.AccessToken == "" {
 		return nil
 	}
@@ -335,11 +304,23 @@ func (s *WebSocketServer) checkAccess(r *http.Request) *actionResponseEnvelope {
 	}
 
 	if token == "" {
-		return &actionResponseEnvelope{Status: entity.StatusFailed, Retcode: 1401, Message: "missing access token"}
+		return &entity.ActionResponseEnvelope{
+			ActionRawResponse: entity.ActionRawResponse{
+				Status:  entity.StatusFailed,
+				Retcode: 1401,
+				Message: "missing access token",
+			},
+		}
 	}
 
 	if token != s.cfg.AccessToken {
-		return &actionResponseEnvelope{Status: entity.StatusFailed, Retcode: 1403, Message: "forbidden"}
+		return &entity.ActionResponseEnvelope{
+			ActionRawResponse: entity.ActionRawResponse{
+				Status:  entity.StatusFailed,
+				Retcode: 1403,
+				Message: "forbidden",
+			},
+		}
 	}
 
 	return nil
@@ -380,7 +361,7 @@ func (s *WebSocketServer) closeAllConns() {
 	}
 }
 
-func (s *WebSocketServer) writeHandshakeError(w http.ResponseWriter, env *actionResponseEnvelope) {
+func (s *WebSocketServer) writeHandshakeError(w http.ResponseWriter, env *entity.ActionResponseEnvelope) {
 	status := http.StatusUnauthorized
 	if env.Retcode == 1403 {
 		status = http.StatusForbidden
@@ -399,7 +380,7 @@ func (s *WebSocketServer) writeHandshakeError(w http.ResponseWriter, env *action
 
 func mapHandlerError(err error) *entity.ActionRawResponse {
 	switch {
-	case errors.Is(err, ErrActionNotFound):
+	case errors.Is(err, dispatcher.ErrActionNotFound):
 		return &entity.ActionRawResponse{
 			Status:  entity.StatusFailed,
 			Retcode: 1404,

@@ -108,6 +108,58 @@ func (r *ActionRawResponse) SetMessage(v string) *ActionRawResponse {
 	return r
 }
 
+func (r *ActionRequestEnvelope) GetActionRequest() ActionRequest {
+	if r == nil {
+		var zero ActionRequest
+		return zero
+	}
+	return r.ActionRequest
+}
+
+func (r *ActionRequestEnvelope) SetActionRequest(v ActionRequest) *ActionRequestEnvelope {
+	r.ActionRequest = v
+	return r
+}
+
+func (r *ActionRequestEnvelope) GetEcho() json.RawMessage {
+	if r == nil {
+		var zero json.RawMessage
+		return zero
+	}
+	return r.Echo
+}
+
+func (r *ActionRequestEnvelope) SetEcho(v json.RawMessage) *ActionRequestEnvelope {
+	r.Echo = v
+	return r
+}
+
+func (r *ActionResponseEnvelope) GetActionRawResponse() ActionRawResponse {
+	if r == nil {
+		var zero ActionRawResponse
+		return zero
+	}
+	return r.ActionRawResponse
+}
+
+func (r *ActionResponseEnvelope) SetActionRawResponse(v ActionRawResponse) *ActionResponseEnvelope {
+	r.ActionRawResponse = v
+	return r
+}
+
+func (r *ActionResponseEnvelope) GetEcho() json.RawMessage {
+	if r == nil {
+		var zero json.RawMessage
+		return zero
+	}
+	return r.Echo
+}
+
+func (r *ActionResponseEnvelope) SetEcho(v json.RawMessage) *ActionResponseEnvelope {
+	r.Echo = v
+	return r
+}
+
 // GetStatus
 // ok | async | failed
 func (r *ActionResponse[T]) GetStatus() ActionResponseStatus {

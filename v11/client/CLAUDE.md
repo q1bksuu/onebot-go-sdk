@@ -2,13 +2,19 @@
 
 ---
 
-# client - HTTP 客户端模块
+# client - 客户端模块
 
-OneBot 11 协议的 HTTP 客户端实现，用于调用 OneBot 实现（如 go-cqhttp）的 API。
+OneBot 11 协议的客户端实现，支持 HTTP 和 WebSocket 两种通信方式。
 
 ---
 
 ## 变更记录 (Changelog)
+
+### 2026-01-05
+
+- **新增 WebSocket 客户端**: 添加 `websocket.go`，支持 WebSocket 正向连接
+- **更新 API 方法数量**: 38 个自动生成的 API 方法
+- **配置选项调整**: `WithHeader`/`WithQuery` 改为接受单个键值对参数
 
 ### 2025-12-21 15:53:08
 
@@ -21,16 +27,16 @@ OneBot 11 协议的 HTTP 客户端实现，用于调用 OneBot 实现（如 go-c
 
 client 模块负责：
 
-1. **HTTP 客户端封装**: 统一的请求构建、鉴权、错误处理
-2. **API 方法生成**: 通过 `bindings-gen` 工具自动生成所有 OneBot API 的封装方法
-3. **灵活配置**: 支持自定义 HTTP Client、超时、访问令牌、路径前缀
-4. **多种调用方式**: 支持 GET/POST、Query/Form/JSON 参数
+1. **HTTP 客户端**: 统一的请求构建、鉴权、错误处理
+2. **WebSocket 客户端**: 正向 WebSocket 连接，支持自动重连和 Action 请求处理
+3. **API 方法生成**: 通过 `bindings-gen` 工具自动生成所有 OneBot API 的封装方法
+4. **灵活配置**: 支持自定义 HTTP Client、超时、访问令牌、路径前缀
 
 ---
 
 ## 入口与启动
 
-### 创建客户端
+### HTTP 客户端
 
 ```go
 import "github.com/q1bksuu/onebot-go-sdk/v11/client"
@@ -50,6 +56,41 @@ c, err := client.NewHTTPClient("http://localhost:5700",
 httpClient := &http.Client{Transport: customTransport}
 c, err := client.NewHTTPClient("http://localhost:5700",
     client.WithHTTPClient(httpClient))
+
+// 设置路径前缀
+c, err := client.NewHTTPClient("http://localhost:5700",
+    client.WithPathPrefix("/bot"))
+```
+
+### WebSocket 客户端
+
+```go
+import "github.com/q1bksuu/onebot-go-sdk/v11/client"
+
+// 创建 WebSocket 客户端
+cfg := client.WSClientConfig{
+    URL:               "ws://localhost:6700",
+    ReconnectInterval: 5 * time.Second,  // 断线重连间隔
+    SelfID:            123456789,         // 机器人 QQ 号
+    AccessToken:       "your-token",      // 可选鉴权令牌
+    ReadTimeout:       30 * time.Second,  // 可选读取超时
+    WriteTimeout:      30 * time.Second,  // 可选写入超时
+}
+
+wsClient := client.NewWebSocketClient(cfg)
+
+// 启动客户端（阻塞直到 context 取消）
+ctx, cancel := context.WithCancel(context.Background())
+go func() {
+    if err := wsClient.Start(ctx); err != nil {
+        log.Printf("WebSocket client error: %v", err)
+    }
+}()
+
+// 关闭客户端
+shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer shutdownCancel()
+wsClient.Shutdown(shutdownCtx)
 ```
 
 ### 调用 API
@@ -92,27 +133,55 @@ func NewHTTPClient(baseURL string, opts ...Option) (*HTTPClient, error)
 - `errBaseURLEmpty`: baseURL 为空
 - `errMissingSchemeOrHost`: baseURL 缺少 scheme 或 host
 
-### 2. 配置选项 (http_client_options.go)
+### 2. WebSocketClient 类型
 
-| Option                            | 说明                             | 示例                              |
-| --------------------------------- | -------------------------------- | --------------------------------- |
-| `WithAccessToken(token string)`  | 设置访问令牌（Bearer 认证）      | `WithAccessToken("secret")`       |
-| `WithTimeout(timeout time.Duration)` | 设置请求超时（默认 30s）    | `WithTimeout(60 * time.Second)`   |
-| `WithHTTPClient(client *http.Client)` | 使用自定义 HTTP 客户端    | `WithHTTPClient(customClient)`    |
+**NewWebSocketClient** (websocket.go:43-57)
 
-### 3. 调用选项 (CallOption)
+```go
+func NewWebSocketClient(cfg WSClientConfig, opts ...WSClientOption) *WebSocketClient
+```
+
+**WSClientConfig 字段**:
+
+| 字段                | 类型            | 说明                     |
+| ------------------- | --------------- | ------------------------ |
+| `URL`               | `string`        | WebSocket 连接地址（必填）|
+| `ReconnectInterval` | `time.Duration` | 断线重连间隔             |
+| `SelfID`            | `int64`         | 机器人 QQ 号（X-Self-ID）|
+| `AccessToken`       | `string`        | 可选鉴权令牌             |
+| `ReadTimeout`       | `time.Duration` | 读取超时（默认 0 无限）  |
+| `WriteTimeout`      | `time.Duration` | 写入超时（默认 0 无限）  |
+
+**主要方法**:
+
+| 方法                              | 说明                              |
+| --------------------------------- | --------------------------------- |
+| `Start(ctx context.Context)`      | 启动客户端，阻塞直到 ctx 取消     |
+| `Shutdown(ctx context.Context)`   | 优雅关闭，等待所有 goroutine 完成 |
+| `BroadcastEvent(event entity.Event)` | 广播事件到所有连接             |
+
+### 3. HTTP 客户端配置选项 (http_client_options.go)
+
+| Option                              | 说明                             | 示例                              |
+| ----------------------------------- | -------------------------------- | --------------------------------- |
+| `WithAccessToken(token string)`     | 设置访问令牌（Bearer 认证）      | `WithAccessToken("secret")`       |
+| `WithTimeout(timeout time.Duration)`| 设置请求超时（默认 30s）         | `WithTimeout(60 * time.Second)`   |
+| `WithHTTPClient(client *http.Client)`| 使用自定义 HTTP 客户端          | `WithHTTPClient(customClient)`    |
+| `WithPathPrefix(prefix string)`     | 设置路径前缀                     | `WithPathPrefix("/bot")`          |
+
+### 4. 调用选项 (CallOption)
 
 在调用 API 方法时可传入：
 
-| CallOption                        | 说明                             | 示例                              |
-| --------------------------------- | -------------------------------- | --------------------------------- |
-| `WithMethod(method string)`       | 覆盖默认 HTTP 方法（GET/POST）   | `WithMethod(http.MethodGet)`      |
-| `WithQuery(query url.Values)`     | 添加 URL 查询参数                | `WithQuery(url.Values{"key": []string{"val"}})` |
-| `WithHeaders(headers map[string][]string)` | 添加自定义 HTTP 头部 | `WithHeaders(map[string][]string{"X-Custom": {"value"}})` |
+| CallOption                      | 说明                             | 示例                              |
+| ------------------------------- | -------------------------------- | --------------------------------- |
+| `WithMethod(method string)`     | 覆盖默认 HTTP 方法（GET/POST）   | `WithMethod(http.MethodGet)`      |
+| `WithQuery(key, value string)`  | 添加单个 URL 查询参数            | `WithQuery("key", "val")`         |
+| `WithHeader(key, value string)` | 添加单个自定义 HTTP 头部         | `WithHeader("X-Custom", "value")` |
 
-### 4. 自动生成的 API 方法 (http_client_actions.go)
+### 5. 自动生成的 API 方法 (http_client_actions.go)
 
-通过 `//go:generate go run ../cmd/bindings-gen` 自动生成，包含 **40+ 个方法**：
+通过 `//go:generate go run ../cmd/bindings-gen` 自动生成，包含 **38 个方法**：
 
 #### 消息 API
 
@@ -163,11 +232,13 @@ func NewHTTPClient(baseURL string, opts ...Option) (*HTTPClient, error)
 ### 内部依赖
 
 - `github.com/q1bksuu/onebot-go-sdk/v11/entity`: 协议实体定义
+- `github.com/q1bksuu/onebot-go-sdk/v11/dispatcher`: 分发器接口定义（WebSocket 客户端使用 ActionRequestHandler）
+- `github.com/q1bksuu/onebot-go-sdk/v11/server`: 服务端组件
 - `github.com/q1bksuu/onebot-go-sdk/v11/internal/util`: JSON 映射工具
 
 ### 外部依赖
 
-无（仅使用标准库）
+- `github.com/gorilla/websocket`: WebSocket 协议支持
 
 ### 代码生成配置
 
@@ -185,7 +256,7 @@ func NewHTTPClient(baseURL string, opts ...Option) (*HTTPClient, error)
 
 ## 数据模型
 
-### 核心类型
+### HTTP 客户端核心类型
 
 ```go
 type HTTPClient struct {
@@ -202,13 +273,39 @@ type clientOptions struct {
 }
 
 type callOptions struct {
-    methodOverride string
-    query          url.Values
-    headers        map[string][]string
+    headers        http.Header     // 自定义请求头
+    query          url.Values      // 查询参数
+    methodOverride string          // HTTP 方法覆盖
 }
 ```
 
-### 请求流程
+### WebSocket 客户端核心类型
+
+```go
+type WSClientConfig struct {
+    URL               string
+    ReconnectInterval time.Duration // 断线重连间隔
+    SelfID            int64         // 机器人 QQ 号（用于 X-Self-ID 请求头）
+    AccessToken       string        // 可选鉴权令牌
+    ReadTimeout       time.Duration // 读取超时（可选），默认 0
+    WriteTimeout      time.Duration // 写入超时（可选），默认 0
+}
+
+type WebSocketClient struct {
+    cfg           WSClientConfig
+    actionHandler dispatcher.ActionRequestHandler
+
+    // 连接管理
+    mu            sync.Mutex
+    conn          *websocket.Conn
+
+    // 控制
+    cancel        context.CancelFunc
+    wg            sync.WaitGroup
+}
+```
+
+### HTTP 请求流程
 
 ```
 1. 调用 API 方法（如 SendPrivateMsg）
@@ -255,6 +352,7 @@ type callOptions struct {
 ### 测试文件
 
 - `http_client_test.go`: 7 个单元测试
+- `websocket_test.go`: 1 个单元测试
 
 ### 测试场景
 
@@ -267,12 +365,14 @@ type callOptions struct {
 | `TestHTTPClient_do_NonZeroRetcode`    | retcode 非 0 返回 ActionError         |
 | `TestHTTPClient_do_DecodeError`       | 无效 JSON 响应返回解码错误            |
 | `TestHTTPClient_SendPrivateMsg_Success` | 完整 API 调用流程测试             |
+| `TestWebSocketClient_HandleActionMessage` | WebSocket Action 消息处理流程测试 |
 
 ### 质量保证
 
 - **Mock HTTP 服务器**: 使用 `httptest.NewServer` 模拟 OneBot 实现
 - **边界条件**: 覆盖空参数、错误状态码、无效 JSON 等场景
 - **集成测试**: `TestHTTPClient_SendPrivateMsg_Success` 测试完整调用链
+- **Mock ActionHandler**: WebSocket 测试使用模拟的 ActionRequestHandler
 
 ---
 
@@ -294,6 +394,11 @@ transport := &http.Transport{
 httpClient := &http.Client{Transport: transport}
 c, _ := client.NewHTTPClient(baseURL, client.WithHTTPClient(httpClient))
 ```
+
+**Q: HTTP 客户端和 WebSocket 客户端如何选择？**
+
+- **HTTP 客户端**: 用于主动调用 OneBot API（发消息、查询信息等）
+- **WebSocket 客户端**: 用于接收 OneBot 实现推送的 Action 请求，支持断线自动重连
 
 **Q: 为什么有些 API 使用 GET，有些使用 POST？**
 
@@ -337,14 +442,16 @@ resp, err := c.SendPrivateMsg(ctx, req)
 
 | 文件                         | 行数  | 职责                              |
 | ---------------------------- | ----- | --------------------------------- |
-| `http_client.go`             | ~276  | HTTP 客户端核心逻辑               |
-| `http_client_options.go`     | ~50   | 客户端和调用选项定义              |
-| `http_client_actions.go`     | (生成) | 40+ 个 API 方法（自动生成）      |
+| `http_client.go`             | ~275  | HTTP 客户端核心逻辑               |
+| `http_client_options.go`     | ~67   | 客户端和调用选项定义              |
+| `http_client_actions.go`     | ~885  | 38 个 API 方法（自动生成）        |
+| `websocket.go`               | ~414  | WebSocket 客户端实现              |
 
 ### 测试文件
 
-- `http_client_test.go`: 7 个单元测试，覆盖核心流程和边界条件
+- `http_client_test.go` (~167 行): 7 个单元测试，覆盖核心流程和边界条件
+- `websocket_test.go` (~72 行): 1 个单元测试，覆盖 Action 消息处理逻辑
 
 ---
 
-*模块文档生成时间: 2025-12-21 15:53:08*
+*模块文档更新时间: 2026-01-05*

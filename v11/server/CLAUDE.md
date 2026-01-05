@@ -2,18 +2,27 @@
 
 ---
 
-# server - HTTP 服务端模块
+# server - HTTP/WebSocket 服务端模块
 
-OneBot 11 协议的 HTTP 服务端实现，用于接收 OneBot 实现发送的动作请求。
+OneBot 11 协议的服务端实现，支持 HTTP 和 WebSocket 双协议，用于接收 OneBot 实现发送的动作请求和事件上报。
 
 ---
 
 ## 变更记录 (Changelog)
 
+### 2026-01-05
+
+- **重大重构**: 架构升级，支持 HTTP/WebSocket 双协议
+- **新增**: UnifiedServer - 统一服务器，HTTP 和 WS 共用端口
+- **新增**: WebSocketServer - 正向 WebSocket 服务支持
+- **新增**: EventDispatcher - 事件分发器
+- **新增**: BaseServer - 通用服务器基础结构
+- **变更**: ActionHandler/ActionRequestHandler 移至 `v11/dispatcher` 包
+- **变更**: HTTPServer 使用 Option 模式，支持事件接收
+
 ### 2025-12-21 15:53:08
 
 - **初始化**: 生成模块级文档
-- **覆盖**: 扫描了 HTTP 服务端、分发器、绑定器及自动生成的注册代码
 
 ---
 
@@ -21,68 +30,95 @@ OneBot 11 协议的 HTTP 服务端实现，用于接收 OneBot 实现发送的�
 
 server 模块负责：
 
-1. **HTTP 服务端实现**: 接收和路由 OneBot 动作请求
-2. **分发器机制**: 基于 action 名称路由到对应处理器
-3. **绑定器模式**: 类型安全的参数绑定和业务逻辑封装
-4. **鉴权支持**: 可选的访问令牌验证（Header 或 Query）
-5. **多种参数格式**: 支持 Query、Form、JSON 参数
+1. **HTTP 服务端实现**: 接收和路由 OneBot 动作请求，支持事件上报接收
+2. **WebSocket 服务端实现**: 支持 /api、/event、/ 三种端点
+3. **统一服务器**: HTTP 和 WebSocket 共用同一端口，通过 Upgrade 头区分
+4. **事件分发器**: 基于事件类型的多级路由匹配
+5. **鉴权支持**: 可选的访问令牌验证（Header 或 Query）
+6. **多种参数格式**: 支持 Query、Form、JSON 参数
 
 ---
 
 ## 入口与启动
 
-### 创建服务器
+### 方式一：使用统一服务器（推荐）
 
 ```go
-import "github.com/q1bksuu/onebot-go-sdk/v11/server"
+import (
+    "github.com/q1bksuu/onebot-go-sdk/v11/server"
+    "github.com/q1bksuu/onebot-go-sdk/v11/dispatcher"
+)
 
-// 1. 创建分发器
-dispatcher := server.NewDispatcher()
+// 1. 创建 Action 分发器
+actionDispatcher := dispatcher.NewDispatcher()
+actionDispatcher.Register("send_private_msg", handleSendPrivateMsg)
 
-// 2. 注册处理器（方式一：直接注册）
-dispatcher.Register("send_private_msg", func(ctx context.Context, params map[string]any) (*entity.ActionRawResponse, error) {
-    // 处理逻辑
-    return &entity.ActionRawResponse{
-        Status:  entity.StatusOK,
-        Retcode: 0,
-        Data:    json.RawMessage(`{"message_id": 12345}`),
-    }, nil
+// 2. 创建事件处理器（可选）
+eventHandler := server.EventRequestHandlerFunc(func(ctx context.Context, event entity.Event) (map[string]any, error) {
+    // 处理事件，返回快速操作
+    return nil, nil
 })
 
-// 3. 注册处理器（方式二：使用 Binder）
-binder := server.NewBinder("send_group_msg", handleSendGroupMsg)
-dispatcher.Register(binder.Action(), binder.Handler())
-
-// 4. 创建 HTTP 服务器
-cfg := server.HTTPConfig{
-    Addr:        ":5700",
-    PathPrefix:  "/",
-    AccessToken: "your-secret",
-    ReadTimeout: 30 * time.Second,
+// 3. 配置统一服务器
+cfg := server.UnifiedConfig{
+    Addr: ":5700",
+    HTTP: server.HTTPConfig{
+        APIPathPrefix: "/",
+        EventPath:     "/event",
+        AccessToken:   "your-secret",
+    },
+    WS: server.WSConfig{
+        PathPrefix:  "/",
+        AccessToken: "your-secret",
+    },
 }
-httpServer := server.NewHTTPServer(cfg, dispatcher)
 
-// 5. 启动服务器
+// 4. 创建并启动
+httpOpts := []server.HTTPServerOption{
+    server.WithActionHandler(actionDispatcher),
+    server.WithEventHandler(eventHandler),
+}
+srv := server.NewUnifiedServer(cfg, httpOpts, actionDispatcher)
+
 ctx := context.Background()
-if err := httpServer.Start(ctx); err != nil {
+if err := srv.Start(ctx); err != nil {
     log.Fatal(err)
 }
 ```
 
-### 处理器函数示例
+### 方式二：仅使用 HTTP 服务器
 
 ```go
-func handleSendGroupMsg(ctx context.Context, req *entity.SendGroupMsgRequest) (*entity.ActionResponse[entity.SendGroupMsgResponse], error) {
-    // 业务逻辑
-    msgID := sendMessageToGroup(req.GroupId, req.Message)
+cfg := server.HTTPConfig{
+    Addr:          ":5700",
+    APIPathPrefix: "/",
+    EventPath:     "/event",
+    AccessToken:   "your-secret",
+}
 
-    return &entity.ActionResponse[entity.SendGroupMsgResponse]{
-        Status:  entity.StatusOK,
-        Retcode: 0,
-        Data: &entity.SendGroupMsgResponse{
-            MessageId: msgID,
-        },
-    }, nil
+httpSrv := server.NewHTTPServer(cfg,
+    server.WithActionHandler(actionDispatcher),
+    server.WithEventHandler(eventHandler),
+)
+
+if err := httpSrv.Start(context.Background()); err != nil {
+    log.Fatal(err)
+}
+```
+
+### 方式三：仅使用 WebSocket 服务器
+
+```go
+cfg := server.WSConfig{
+    Addr:        ":6700",
+    PathPrefix:  "/",
+    AccessToken: "your-secret",
+}
+
+wsSrv := server.NewWebSocketServer(cfg, actionDispatcher)
+
+if err := wsSrv.Start(context.Background()); err != nil {
+    log.Fatal(err)
 }
 ```
 
@@ -90,107 +126,219 @@ func handleSendGroupMsg(ctx context.Context, req *entity.SendGroupMsgRequest) (*
 
 ## 对外接口
 
-### 1. HTTPServer (http_server.go)
+### 1. UnifiedServer (unified_server.go)
 
-**NewHTTPServer** (http_server.go:42-58)
+统一服务器，HTTP 和 WebSocket 共用同一端口。
+
+**NewUnifiedServer** (unified_server.go:36-72)
 
 ```go
-func NewHTTPServer(cfg HTTPConfig, handler ActionRequestHandler) *HTTPServer
+func NewUnifiedServer(
+    cfg UnifiedConfig,
+    httpOpts []HTTPServerOption,
+    wsHandler dispatcher.ActionRequestHandler,
+) *UnifiedServer
 ```
 
-**参数**:
+**UnifiedConfig 配置**:
 
-- `cfg`: HTTP 服务器配置
-- `handler`: 动作请求处理器（通常是 `Dispatcher`）
+```go
+type UnifiedConfig struct {
+    Addr string // 统一监听地址
+
+    HTTP HTTPConfig // HTTP 配置 (Addr 字段将被忽略)
+    WS   WSConfig   // WebSocket 配置 (Addr 字段将被忽略)
+
+    // 通用超时配置
+    ReadHeaderTimeout time.Duration
+    ReadTimeout       time.Duration
+    WriteTimeout      time.Duration
+    IdleTimeout       time.Duration
+}
+```
 
 **方法**:
 
-- `Start(ctx context.Context) error`: 启动服务器（阻塞）
+- `Start(ctx context.Context) error`: 启动服务器（阻塞，直到 context 取消）
 - `Shutdown(ctx context.Context) error`: 优雅关闭
-- `Handler() http.Handler`: 返回 HTTP 处理器（可挂载到外部路由）
+
+### 2. HTTPServer (http_server.go)
+
+**NewHTTPServer** (http_server.go:66-101)
+
+```go
+func NewHTTPServer(cfg HTTPConfig, opts ...HTTPServerOption) *HTTPServer
+```
+
+**HTTPServerOption 选项**:
+
+- `WithActionHandler(h dispatcher.ActionRequestHandler)`: 设置动作处理器
+- `WithEventHandler(h EventRequestHandler)`: 设置事件处理器
 
 **HTTPConfig 配置**:
 
 ```go
 type HTTPConfig struct {
-    Addr              string        // 监听地址，如 ":5700"
-    PathPrefix        string        // 路由前缀，如 "/"
-    ReadHeaderTimeout time.Duration // 读取头部超时
-    ReadTimeout       time.Duration // 读取超时
-    WriteTimeout      time.Duration // 写入超时
-    IdleTimeout       time.Duration // 空闲超时
-    AccessToken       string        // 访问令牌（可选）
+    Addr              string        // 监听地址，例 ":5700"
+    APIPathPrefix     string        // API 接口路由前缀，可为空或"/"
+    EventPath         string        // 事件接口路由，可为空或"/"
+    ReadHeaderTimeout time.Duration
+    ReadTimeout       time.Duration
+    WriteTimeout      time.Duration
+    IdleTimeout       time.Duration
+    AccessToken       string        // 可选鉴权，若为空则不校验
 }
 ```
 
-### 2. Dispatcher (dispatcher.go)
+**方法**:
 
-**NewDispatcher** (dispatcher.go:17-19)
+- `Start(ctx context.Context) error`: 启动服务器
+- `Handler() http.Handler`: 返回 HTTP 处理器（可挂载到外部路由）
+
+### 3. WebSocketServer (websocket.go)
+
+**NewWebSocketServer** (websocket.go:61-99)
 
 ```go
-func NewDispatcher() *Dispatcher
+func NewWebSocketServer(cfg WSConfig, handler dispatcher.ActionRequestHandler) *WebSocketServer
+```
+
+**WSConfig 配置**:
+
+```go
+type WSConfig struct {
+    Addr         string                     // 监听地址，例 ":6700"
+    PathPrefix   string                     // 路径前缀，用于 /api、/event、/ 路由
+    AccessToken  string                     // 可选鉴权，若为空则不校验
+    CheckOrigin  func(r *http.Request) bool // 可选跨域校验，默认全放行
+    ReadTimeout  time.Duration
+    WriteTimeout time.Duration
+    IdleTimeout  time.Duration
+}
 ```
 
 **方法**:
 
-- `Register(action string, h ActionHandler)`: 注册 action 处理器
-- `HandleActionRequest(ctx, req) (*entity.ActionRawResponse, error)`: 处理动作请求（实现 `ActionRequestHandler` 接口）
+- `Start(ctx context.Context) error`: 启动服务器
+- `Shutdown(ctx context.Context) error`: 优雅关闭
+- `Handler() http.Handler`: 返回 HTTP 处理器
+- `BroadcastEvent(event entity.Event) error`: 向所有事件连接广播事件
 
-### 3. Binder (binder.go)
+**WebSocket 端点**:
 
-**NewBinder** (binder.go:18-23)
+- `{prefix}/api`: API 端点，用于接收动作请求
+- `{prefix}/event`: 事件端点，用于推送事件
+- `{prefix}` 或 `/`: 通用端点，同时支持 API 和事件
+
+### 4. EventDispatcher (event_dispatcher.go)
+
+事件分发器，基于事件类型进行多级路由匹配。
+
+**NewEventDispatcher** (event_dispatcher.go:18-20)
 
 ```go
-func NewBinder[Req any, Resp any](
-    action string,
-    fn func(context.Context, *Req) (*entity.ActionResponse[Resp], error),
-) *Binder[Req, Resp]
+func NewEventDispatcher() *EventDispatcher
 ```
-
-**类型参数**:
-
-- `Req`: 请求类型（如 `entity.SendPrivateMsgRequest`）
-- `Resp`: 响应类型（如 `entity.SendPrivateMsgResponse`）
 
 **方法**:
 
-- `Action() string`: 返回绑定的 action 名称
-- `Handler() ActionHandler`: 返回类型安全的处理器
+- `Register(key string, h EventHandler)`: 注册事件处理器
+- `HandleEvent(ctx context.Context, event entity.Event) (map[string]any, error)`: 处理事件
 
-**工作原理**:
+**路由键格式**:
 
-1. 接收 `map[string]any` 参数
-2. 使用 `util.JsonTagMapping` 绑定到 `Req` 类型
-3. 调用业务函数 `fn`
-4. 将 `ActionResponse[Resp]` 转换为 `ActionRawResponse`
-
-### 4. 处理器接口 (handler.go)
+事件分发器支持多级匹配，从最具体到最通用：
 
 ```go
-// 处理动作请求
-type ActionRequestHandler interface {
-    HandleActionRequest(ctx context.Context, req *entity.ActionRequest) (*entity.ActionRawResponse, error)
+// 消息事件
+"message"                           // 所有消息
+"message.private"                   // 私聊消息
+"message.private.friend"            // 好友私聊
+
+// 通知事件
+"notice"                            // 所有通知
+"notice.group_increase"             // 群成员增加
+"notice.group_increase.approve"     // 管理员同意入群
+
+// 请求事件
+"request"                           // 所有请求
+"request.friend"                    // 好友请求
+
+// 元事件
+"meta_event"                        // 所有元事件
+"meta_event.heartbeat"              // 心跳
+```
+
+### 5. BaseServer (base.go)
+
+通用服务器基础结构，封装 http.Server 的启动与关闭逻辑。
+
+```go
+type BaseServer struct {
+    Srv *http.Server
+}
+
+func NewBaseServer(cfg ServerConfig, handler http.Handler) *BaseServer
+func (s *BaseServer) Start(ctx context.Context, onShutdown func(context.Context) error) error
+func (s *BaseServer) Shutdown(ctx context.Context) error
+```
+
+### 6. 处理器接口 (handler.go)
+
+```go
+// 处理事件，返回快速操作响应（可选）
+type EventHandler func(ctx context.Context, event entity.Event) (map[string]any, error)
+
+// 事件请求处理器接口
+type EventRequestHandler interface {
+    HandleEvent(ctx context.Context, event entity.Event) (map[string]any, error)
 }
 
 // 适配函数类型
-type ActionRequestHandlerFunc func(ctx context.Context, req *entity.ActionRequest) (*entity.ActionRawResponse, error)
-
-// 处理具体 action
-type ActionHandler func(ctx context.Context, params map[string]any) (*entity.ActionRawResponse, error)
+type EventRequestHandlerFunc func(ctx context.Context, event entity.Event) (map[string]any, error)
 ```
 
-### 5. 错误定义 (errors.go)
+**注意**: `ActionHandler` 和 `ActionRequestHandler` 已移至 `v11/dispatcher` 包。
+
+### 7. 错误定义 (errors.go)
 
 ```go
 var (
-    ErrActionNotFound = errors.New("action not found")
-    ErrBadRequest     = errors.New("bad request")
+    ErrBadRequest                = errors.New("bad request")
+    ErrUniversalClientURLEmpty   = errors.New("universal client URL is empty")
+    ErrMissingTypeField          = errors.New("missing type field")
+    ErrUnknownEventType          = errors.New("unknown event type")
+    ErrInvalidEventTreeStructure = errors.New("invalid event tree structure")
+    ErrMissingOrInvalidPostType  = errors.New("missing or invalid post_type field")
+    ErrUnknownPostType           = errors.New("unknown post_type")
+    ErrNoEventHandler            = errors.New("no event handler")
 )
 ```
 
-### 6. 自动生成的注册辅助 (http_server_actions_register.go)
+### 8. 自动生成的代码
 
-通过 `//go:generate go run ../cmd/bindings-gen` 生成，提供便捷的批量注册方法（具体实现取决于生成器配置）。
+**http_server_actions_register.go** (~550行)
+
+通过 `//go:generate go run ../cmd/bindings-gen` 生成，提供动作处理服务接口。
+
+**http_server_events_register.go** (~205行)
+
+通过 `//go:generate go run ../cmd/event-bindings-gen` 生成，提供事件处理服务接口：
+
+```go
+type MessageEventService interface {
+    HandlePrivateMessage(ctx context.Context, ev *entity.PrivateMessageEvent) (map[string]any, error)
+    HandleGroupMessage(ctx context.Context, ev *entity.GroupMessageEvent) (map[string]any, error)
+}
+
+type NoticeEventService interface {
+    HandleGroupFileUpload(ctx context.Context, ev *entity.GroupFileUploadEvent) (map[string]any, error)
+    // ... 更多处理方法
+}
+
+type RequestEventService interface { ... }
+type MetaEventService interface { ... }
+```
 
 ---
 
@@ -199,11 +347,12 @@ var (
 ### 内部依赖
 
 - `github.com/q1bksuu/onebot-go-sdk/v11/entity`: 协议实体定义
-- `github.com/q1bksuu/onebot-go-sdk/v11/internal/util`: JSON 映射工具
+- `github.com/q1bksuu/onebot-go-sdk/v11/dispatcher`: 动作分发器
+- `github.com/q1bksuu/onebot-go-sdk/v11/internal/util`: 工具函数
 
 ### 外部依赖
 
-无（仅使用标准库）
+- `github.com/gorilla/websocket`: WebSocket 协议支持
 
 ### 代码生成配置
 
@@ -213,6 +362,7 @@ var (
 
 ```go
 //go:generate go run ../cmd/bindings-gen -config=../cmd/bindings-gen/config.yaml -http-server-actions-register-output=./http_server_actions_register.go
+//go:generate go run ../cmd/event-bindings-gen -config=../cmd/event-bindings-gen/config.yaml -output=./http_server_events_register.go
 ```
 
 ---
@@ -222,56 +372,92 @@ var (
 ### 核心类型
 
 ```go
+type BaseServer struct {
+    Srv *http.Server
+}
+
 type HTTPServer struct {
-    srv     *http.Server           // 标准 HTTP 服务器
-    mux     *http.ServeMux         // 路由多路复用器
-    cfg     HTTPConfig             // 配置
-    handler ActionRequestHandler   // 请求处理器
+    *BaseServer
+    mux           *http.ServeMux
+    cfg           HTTPConfig
+    actionHandler dispatcher.ActionRequestHandler
+    eventHandler  EventRequestHandler
 }
 
-type Dispatcher struct {
-    handlers map[string]ActionHandler // action -> 处理器映射
+type WebSocketServer struct {
+    *BaseServer
+    cfg           WSConfig
+    handler       dispatcher.ActionRequestHandler
+    upgrader      websocket.Upgrader
+    mu            sync.Mutex
+    eventConns    map[*wsConn]struct{}  // 事件连接池
+    universalConn map[*wsConn]struct{}  // 通用连接池
 }
 
-type Binder[Req any, Resp any] struct {
-    action string                                                                        // action 名称
-    fn     func(ctx context.Context, req *Req) (*entity.ActionResponse[Resp], error)   // 业务函数
+type UnifiedServer struct {
+    *BaseServer
+    httpSrv *HTTPServer
+    wsSrv   *WebSocketServer
+}
+
+type EventDispatcher struct {
+    handlers map[string]EventHandler
 }
 ```
 
-### 请求处理流程
+### HTTP 请求处理流程
 
 ```
 1. HTTP 请求到达 (如 POST /send_private_msg)
    ↓
-2. handleRoot (http_server.go:97-132)
+2. handleRoot (http_server.go)
    ├─ extractAction: 从 URL 路径提取 action
    ├─ checkAccess: 验证访问令牌（如果配置了）
    └─ parseParams: 解析参数（Query + Form + JSON Body）
    ↓
-3. 构造 ActionRequest
-   {
-     "action": "send_private_msg",
-     "params": {"user_id": 123456, "message": "Hello"}
-   }
+3. 调用 actionHandler.HandleActionRequest
    ↓
-4. 调用 handler.HandleActionRequest (通常是 Dispatcher)
+4. 返回 JSON 响应
+```
+
+### HTTP 事件处理流程
+
+```
+1. HTTP POST 到达 EventPath (如 POST /event)
    ↓
-5. Dispatcher.HandleActionRequest (dispatcher.go:27-37)
-   ├─ 查找 handlers[action]
-   └─ 调用对应的 ActionHandler
+2. handleEvent (http_server.go)
+   ├─ checkAccess: 验证访问令牌
+   ├─ parseEvent: 解析事件 JSON 为具体类型
+   └─ 调用 eventHandler.HandleEvent
    ↓
-6. ActionHandler (可能来自 Binder)
-   ├─ Binder.Handler: 绑定参数到类型化结构体
-   ├─ 调用业务函数 fn(ctx, req)
-   └─ 转换响应为 ActionRawResponse
+3. 返回快速操作响应或 204 No Content
+```
+
+### WebSocket 处理流程
+
+```
+1. WebSocket 连接建立 (如 ws://host/api)
    ↓
-7. 返回 JSON 响应
-   {
-     "status": "ok",
-     "retcode": 0,
-     "data": {"message_id": 12345}
-   }
+2. 根据路径分发
+   ├─ /api: handleAPI - 接收动作请求，返回响应
+   ├─ /event: handleEvent - 接收事件推送
+   └─ /: handleUniversal - 同时支持 API 和事件
+   ↓
+3. serveActionConn: 循环读取消息
+   ├─ handleActionMessage: 解析并处理动作请求
+   └─ 写入响应
+```
+
+### 统一服务器路由
+
+UnifiedServer 使用 `combinedHandler` 在同一端口处理 HTTP 和 WebSocket：
+
+```
+请求到达
+   ↓
+检查 Upgrade: websocket 头
+   ├─ 是: 路由到 WebSocketServer.Handler()
+   └─ 否: 路由到 HTTPServer.Handler()
 ```
 
 ### 鉴权机制
@@ -281,103 +467,108 @@ type Binder[Req any, Resp any] struct {
 1. **HTTP Header**: `Authorization: Bearer {token}`
 2. **URL Query**: `?access_token={token}`
 
-验证逻辑 (http_server.go:152-173):
-
-- 如果 `cfg.AccessToken` 为空，跳过验证
-- 否则检查请求中的 token 是否匹配
-- 不匹配返回 401 (Unauthorized) 或 403 (Forbidden)
-
-### 参数解析
-
-(http_server.go:175-219)
-
-1. **解析 Form 参数**: `r.ParseForm()`，支持 Query 和 `application/x-www-form-urlencoded`
-2. **解析 JSON Body** (仅 POST):
-   - 检查 `Content-Type: application/json`
-   - 使用 `json.Decoder` 解码到 `map[string]any`
-   - 合并到 Form 参数
-3. **返回合并后的参数 map**
-
 ---
 
 ## 测试与质量
 
 ### 测试文件
 
-- `http_server_test.go`: 10 个单元测试
-- `dispatcher_test.go`: 3 个单元测试
-- `binder_test.go`: 2 个单元测试
+- `http_server_test.go`: 17 个单元测试
+- `websocket_test.go`: 6 个单元测试
+- `unified_server_test.go`: 5 个单元测试
 
 ### 测试场景
 
 #### http_server_test.go
 
-| 测试函数                                        | 测试内容                              |
-| ----------------------------------------------- | ------------------------------------- |
-| `TestNewHTTPServer_PathPrefixNormalizeAndHandler` | 路径前缀标准化和 Handler 获取       |
-| `TestHTTPServer_HandleRoot_PathAndNotFound`     | 路由匹配和 404 处理                   |
-| `TestHTTPServer_AuthRequired_MissingOrWrongToken` | 鉴权失败场景（401/403）            |
-| `TestHTTPServer_AuthRequired_WithHeaderAndQuery` | 鉴权成功场景（Header 和 Query）     |
-| `TestHTTPServer_Params_QueryAndFormAndJSON`     | 多种参数格式解析                      |
-| `TestHTTPServer_Params_InvalidForm`             | 无效 Form 数据处理                    |
-| `TestHTTPServer_JSON_InvalidOrUnsupportedContentType` | 无效 JSON 或不支持的 Content-Type |
-| `TestHTTPServer_WriteError_Mapping`             | 错误映射到 HTTP 状态码                |
-| `TestHTTPServer_NilResponse_DefaultFailed`      | 空响应默认返回 failed                 |
-| `TestHTTPServer_StartAndShutdown_ContextCancel` | 服务器启动和优雅关闭                  |
+| 测试函数 | 测试内容 |
+| --- | --- |
+| `TestNewHTTPServer_PathPrefixNormalizeAndHandler` | 路径前缀标准化和 Handler 获取 |
+| `TestHTTPServer_HandleRoot_PathAndNotFound` | 路由匹配和 404 处理 |
+| `TestHTTPServer_AuthRequired_MissingOrWrongToken` | 鉴权失败场景（401/403） |
+| `TestHTTPServer_AuthRequired_WithHeaderAndQuery` | 鉴权成功场景 |
+| `TestHTTPServer_Params_QueryAndFormAndJSON` | 多种参数格式解析 |
+| `TestHTTPServer_Params_InvalidForm` | 无效 Form 数据处理 |
+| `TestHTTPServer_JSON_InvalidOrUnsupportedContentType` | 无效 JSON 处理 |
+| `TestHTTPServer_WriteError_Mapping` | 错误映射到 HTTP 状态码 |
+| `TestHTTPServer_NilResponse_DefaultFailed` | 空响应默认返回 failed |
+| `TestHTTPServer_StartAndShutdown_ContextCancel` | 服务器启动和优雅关闭 |
+| `TestHTTPServer_EventPath_Registration` | 事件路径注册 |
+| `TestHTTPServer_EventPath_NoHandler_Returns204` | 无事件处理器返回 204 |
+| `TestHTTPServer_EventPath_OnlyAcceptsPOST` | 事件端点仅接受 POST |
+| `TestHTTPServer_EventPath_InvalidJSON_Returns400` | 无效 JSON 返回 400 |
+| `TestHTTPServer_EventPath_EmptyQuickOp_Returns204` | 空快速操作返回 204 |
+| `TestHTTPServer_EventPath_AllEventTypes` | 所有事件类型解析 |
+| `TestEventDispatcher_Routing` | 事件分发器路由 |
 
-#### dispatcher_test.go
+#### websocket_test.go
 
-| 测试函数                                  | 测试内容                              |
-| ----------------------------------------- | ------------------------------------- |
-| `TestDispatcher_RegisterAndHandle_Success` | 注册和调用处理器                      |
-| `TestDispatcher_HandleActionRequest_NotFound` | 未注册的 action 返回 ErrActionNotFound |
-| `TestDispatcher_Register_OverrideExisting` | 覆盖已存在的处理器                    |
+| 测试函数 | 测试内容 |
+| --- | --- |
+| `TestNormalizeAndMatchPath` | 路径标准化和匹配 |
+| `TestCheckAccess` | WebSocket 鉴权 |
+| `TestHandleActionMessageMapping` | 动作消息处理映射 |
+| `TestWriteHandshakeError` | 握手错误写入 |
+| `TestHandleAPIAndUniversalFlow` | API 和通用端点流程 |
+| `TestBroadcastEventIntegration` | 事件广播集成测试 |
 
-#### binder_test.go
+#### unified_server_test.go
 
-| 测试函数                              | 测试内容                              |
-| ------------------------------------- | ------------------------------------- |
-| `TestBinder_ActionAndHandler_Success` | Binder 绑定和调用成功                 |
-| `TestBinder_Handler_PropagatesFuncError` | 业务函数错误传播                   |
+| 测试函数 | 测试内容 |
+| --- | --- |
+| `TestUnifiedServer_Initialization` | 统一服务器初始化 |
+| `TestUnifiedServer_Routing_HTTP` | HTTP 路由 |
+| `TestUnifiedServer_Routing_WebSocket` | WebSocket 路由 |
+| `TestUnifiedServer_Routing_UniversalPath_DistinguishByProtocol` | 协议区分 |
+| `TestUnifiedServer_StartAndShutdown` | 启动和关闭 |
 
 ### 质量保证
 
-- **Mock 测试**: 使用 `httptest.NewRecorder` 模拟 HTTP 请求/响应
+- **Mock 测试**: 使用 `httptest.NewRecorder` 和 `httptest.NewServer`
+- **WebSocket 测试**: 使用 `gorilla/websocket` 客户端
 - **边界条件**: 覆盖空参数、无效 JSON、未授权等场景
-- **集成测试**: `TestHTTPServer_StartAndShutdown_ContextCancel` 测试完整生命周期
+- **集成测试**: 完整的服务器生命周期测试
 
 ---
 
 ## 常见问题 (FAQ)
 
-**Q: 如何添加新的 action 处理器？**
+**Q: 如何选择使用哪种服务器？**
 
-**方式一：直接注册**
-
-```go
-dispatcher.Register("custom_action", func(ctx context.Context, params map[string]any) (*entity.ActionRawResponse, error) {
-    // 处理逻辑
-    return &entity.ActionRawResponse{...}, nil
-})
-```
-
-**方式二：使用 Binder（推荐）**
-
-```go
-func handleCustomAction(ctx context.Context, req *CustomRequest) (*entity.ActionResponse[CustomResponse], error) {
-    // 类型安全的处理逻辑
-    return &entity.ActionResponse[CustomResponse]{...}, nil
-}
-
-binder := server.NewBinder("custom_action", handleCustomAction)
-dispatcher.Register(binder.Action(), binder.Handler())
-```
+- **UnifiedServer**: 推荐，HTTP 和 WebSocket 共用端口，简化部署
+- **HTTPServer**: 仅需 HTTP API 和事件接收时使用
+- **WebSocketServer**: 仅需 WebSocket 通信时使用
 
 **Q: 如何处理事件上报？**
 
-OneBot 11 的事件上报通常通过 **反向 WebSocket** 或 **反向 HTTP** 实现，不在此模块范围内。
+1. **HTTP 方式**: 配置 `HTTPConfig.EventPath` 并使用 `WithEventHandler`
+2. **WebSocket 方式**: 客户端连接 `/event` 端点，服务端调用 `BroadcastEvent`
 
-如果使用反向 HTTP，可以在 Dispatcher 中注册特殊 action 来接收事件。
+```go
+// HTTP 事件处理
+eventHandler := server.EventRequestHandlerFunc(func(ctx context.Context, event entity.Event) (map[string]any, error) {
+    switch e := event.(type) {
+    case *entity.PrivateMessageEvent:
+        // 返回快速操作
+        return map[string]any{"reply": "收到消息"}, nil
+    }
+    return nil, nil
+})
+```
+
+**Q: 如何使用 EventDispatcher？**
+
+```go
+ed := server.NewEventDispatcher()
+
+// 注册处理器（从具体到通用）
+ed.Register("message.private.friend", handleFriendMessage)
+ed.Register("message.private", handlePrivateMessage)
+ed.Register("message", handleAllMessage)
+
+// 作为 EventRequestHandler 使用
+httpSrv := server.NewHTTPServer(cfg, server.WithEventHandler(ed))
+```
 
 **Q: 如何集成到现有 HTTP 服务器？**
 
@@ -388,38 +579,21 @@ handler := httpServer.Handler()
 // 挂载到现有路由
 existingMux := http.NewServeMux()
 existingMux.Handle("/onebot/", http.StripPrefix("/onebot", handler))
-
-// 启动现有服务器
-http.ListenAndServe(":8080", existingMux)
 ```
 
-**Q: 如何自定义错误响应？**
+**Q: ActionHandler 去哪了？**
 
-修改 `writeError` 方法 (http_server.go:231-240)，或在业务函数中返回自定义的 `ActionResponse`：
+`ActionHandler`、`ActionRequestHandler`、`Dispatcher`、`Binder` 已移至独立的 `v11/dispatcher` 包：
 
 ```go
-return &entity.ActionResponse[MyResponse]{
-    Status:  entity.StatusFailed,
-    Retcode: 1001,
-    Message: "自定义错误信息",
-}, nil
+import "github.com/q1bksuu/onebot-go-sdk/v11/dispatcher"
+
+d := dispatcher.NewDispatcher()
+d.Register("send_private_msg", handler)
+
+binder := dispatcher.NewBinder("send_group_msg", handleSendGroupMsg)
+d.Register(binder.Action(), binder.Handler())
 ```
-
-**Q: PathPrefix 如何工作？**
-
-假设 `PathPrefix = "/api/v1"`，则：
-
-- URL: `http://localhost:5700/api/v1/send_private_msg`
-- 提取的 action: `send_private_msg`
-
-PathPrefix 会自动标准化为 `/api/v1/`（确保前后有斜杠）。
-
-**Q: 如何处理并发请求？**
-
-`http.Server` 默认为每个请求创建一个 goroutine，因此处理器需要是**并发安全**的。
-
-- `Dispatcher` 的 `handlers` map 在注册完成后只读，并发安全
-- 业务函数内的状态需要自行加锁或使用 channel
 
 ---
 
@@ -427,21 +601,26 @@ PathPrefix 会自动标准化为 `/api/v1/`（确保前后有斜杠）。
 
 ### 主要源文件
 
-| 文件                                | 行数  | 职责                              |
-| ----------------------------------- | ----- | --------------------------------- |
-| `http_server.go`                    | ~241  | HTTP 服务端核心实现               |
-| `dispatcher.go`                     | ~38   | Action 分发器                     |
-| `binder.go`                         | ~46   | 类型安全的参数绑定器              |
-| `handler.go`                        | ~26   | 处理器接口定义                    |
-| `errors.go`                         | ~10   | 错误定义                          |
-| `http_server_actions_register.go`   | (生成) | 自动生成的注册辅助代码            |
+| 文件 | 行数 | 职责 |
+| --- | --- | --- |
+| `http_server.go` | ~485 | HTTP 服务端核心实现 |
+| `websocket.go` | ~402 | WebSocket 服务端实现 |
+| `event_dispatcher.go` | ~168 | 事件分发器 |
+| `unified_server.go` | ~114 | 统一服务器（HTTP+WS） |
+| `base.go` | ~82 | 通用服务器基础结构 |
+| `handler.go` | ~23 | 事件处理器接口定义 |
+| `errors.go` | ~23 | 错误定义 |
+| `http_server_actions_register.go` | ~550 | 自动生成的动作注册代码 |
+| `http_server_events_register.go` | ~205 | 自动生成的事件服务接口 |
 
 ### 测试文件
 
-- `http_server_test.go`: 10 个单元测试
-- `dispatcher_test.go`: 3 个单元测试
-- `binder_test.go`: 2 个单元测试
+| 文件 | 测试数 |
+| --- | --- |
+| `http_server_test.go` | 17 |
+| `websocket_test.go` | 6 |
+| `unified_server_test.go` | 5 |
 
 ---
 
-*模块文档生成时间: 2025-12-21 15:53:08*
+*模块文档更新时间: 2026-01-05*

@@ -10,6 +10,13 @@ OneBot 11 协议的完整类型定义，包括消息、事件、API 请求/响�
 
 ## 变更记录 (Changelog)
 
+### 2026-01-05
+
+- **新增**: `Event` 接口，统一所有事件类型的公共方法
+- **新增**: `ActionRequestEnvelope` 和 `ActionResponseEnvelope`，支持 Echo 字段的通信封装
+- **重构**: 事件常量类型简化，从每事件独立类型改为统一枚举（`EventPostType`、`EventNoticeType` 等）
+- **更新**: 行数和行号引用
+
 ### 2025-12-21 15:53:08
 
 - **初始化**: 生成模块级文档
@@ -75,22 +82,36 @@ type MessageValue struct {
 
 ### 2. 事件类型
 
-**消息事件** (event.go:4-96)
+**Event 接口** (event.go:3-7)
+
+所有事件类型的公共接口：
+
+```go
+type Event interface {
+    GetTime() int64
+    GetSelfId() int64
+    GetPostType() EventPostType
+}
+```
+
+所有具体事件类型（如 `PrivateMessageEvent`、`GroupMessageEvent` 等）都实现了此接口。
+
+**消息事件** (event.go:9-102)
 
 - `PrivateMessageEvent`: 私聊消息（好友/群临时/其他）
 - `GroupMessageEvent`: 群消息（普通/匿名/系统提示）
 
-**通知事件** (event.go:98-333)
+**通知事件** (event.go:104-350)
 
 - 群文件上传、管理员变动、成员增减、禁言
 - 好友添加、消息撤回、戳一戳、红包运气王、荣誉变更
 
-**请求事件** (event.go:335-376)
+**请求事件** (event.go:352-396)
 
 - `FriendRequestEvent`: 加好友请求
 - `GroupRequestEvent`: 加群请求/邀请
 
-**元事件** (event.go:378-409)
+**元事件** (event.go:398-432)
 
 - `LifecycleEvent`: 生命周期（启用/停用/连接）
 - `HeartbeatEvent`: 心跳
@@ -129,7 +150,7 @@ type MessageValue struct {
 
 ### 4. 通信层实体
 
-**ActionRequest** (communication.go:9-15)
+**ActionRequest** (communication.go:9-14)
 
 传输层的动作请求：
 
@@ -140,7 +161,7 @@ type ActionRequest struct {
 }
 ```
 
-**ActionRawResponse** (communication.go:18-23)
+**ActionRawResponse** (communication.go:17-22)
 
 传输层的原始响应：
 
@@ -153,7 +174,29 @@ type ActionRawResponse struct {
 }
 ```
 
-**ActionResponse[T]** (communication.go:26-56)
+**ActionRequestEnvelope** (communication.go:25-29)
+
+包含 Echo 字段的请求封装，用于 WebSocket 等需要请求-响应关联的场景：
+
+```go
+type ActionRequestEnvelope struct {
+    ActionRequest
+    Echo json.RawMessage `json:"echo,omitempty"`
+}
+```
+
+**ActionResponseEnvelope** (communication.go:32-36)
+
+包含 Echo 字段的响应封装：
+
+```go
+type ActionResponseEnvelope struct {
+    ActionRawResponse
+    Echo json.RawMessage `json:"echo,omitempty"`
+}
+```
+
+**ActionResponse[T]** (communication.go:39-69)
 
 泛型响应类型，Data 字段已解码：
 
@@ -166,7 +209,7 @@ type ActionResponse[T any] struct {
 }
 ```
 
-**ActionError** (communication.go:58-71)
+**ActionError** (communication.go:71-85)
 
 错误类型，实现了 `error` 接口。
 
@@ -217,6 +260,7 @@ entity/
 │   └── Segment (消息段，含 SegmentData)
 │
 ├── 事件类型
+│   ├── Event (公共接口：GetTime, GetSelfId, GetPostType)
 │   ├── 消息事件 (PrivateMessageEvent, GroupMessageEvent)
 │   ├── 通知事件 (10+ 种)
 │   ├── 请求事件 (FriendRequestEvent, GroupRequestEvent)
@@ -232,14 +276,16 @@ entity/
 │
 ├── 通信类型
 │   ├── ActionRequest (动作请求)
+│   ├── ActionRequestEnvelope (带 Echo 的请求封装)
 │   ├── ActionRawResponse (原始响应)
+│   ├── ActionResponseEnvelope (带 Echo 的响应封装)
 │   ├── ActionResponse[T] (泛型响应)
 │   └── ActionError (错误)
 │
 └── 常量定义
     ├── base_consts.go (性别、群角色等)
     ├── message_consts.go (消息类型、值类型)
-    ├── event_consts.go (事件类型、子类型)
+    ├── event_consts.go (统一事件类型枚举)
     ├── api_consts.go (群荣誉类型、录音格式等)
     ├── communication_consts.go (响应状态、返回码)
     └── segment_data_consts.go (消息段类型、录音格式等)
@@ -353,13 +399,13 @@ Go 1.18+ 推荐使用 `any` 代替 `interface{}`，更简洁。
 | ---------------------------------- | -------- | --------------------------------- |
 | `base.go`                          | ~60      | 基础类型定义                      |
 | `message.go`                       | ~73      | 消息值类型与自定义序列化          |
-| `event.go`                         | ~410     | 所有事件类型定义                  |
+| `event.go`                         | ~432     | Event 接口与所有事件类型定义      |
 | `api.go`                           | ~648     | 所有 API 请求/响应定义            |
-| `communication.go`                 | ~72      | 通信层类型                        |
+| `communication.go`                 | ~85      | 通信层类型（含 Envelope 封装）    |
 | `segment_data.go`                  | (未展开) | 消息段数据定义                    |
 | `base_consts.go`                   | (常量)   | 性别、群角色等枚举                |
 | `message_consts.go`                | (常量)   | 消息类型、值类型枚举              |
-| `event_consts.go`                  | (常量)   | 事件类型、子类型枚举              |
+| `event_consts.go`                  | ~121     | 统一事件类型枚举                  |
 | `api_consts.go`                    | (常量)   | 群荣誉类型、录音格式等枚举        |
 | `communication_consts.go`          | (常量)   | 响应状态、返回码枚举              |
 | `segment_data_consts.go`           | (常量)   | 消息段类型枚举                    |
@@ -382,4 +428,4 @@ Go 1.18+ 推荐使用 `any` 代替 `interface{}`，更简洁。
 
 ---
 
-*模块文档生成时间: 2025-12-21 15:53:08*
+*模块文档更新时间: 2026-01-05*
