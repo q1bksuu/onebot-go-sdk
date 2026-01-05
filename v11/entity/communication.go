@@ -22,6 +22,20 @@ type ActionRawResponse struct {
 	Message string                `json:"message,omitempty"` // 可选，人类可读的错误信息
 }
 
+// ActionRequestEnvelope 包含 Echo 字段的动作请求封装.
+type ActionRequestEnvelope struct {
+	ActionRequest
+
+	Echo json.RawMessage `json:"echo,omitempty"`
+}
+
+// ActionResponseEnvelope 包含 Echo 字段的动作响应封装.
+type ActionResponseEnvelope struct {
+	ActionRawResponse
+
+	Echo json.RawMessage `json:"echo,omitempty"`
+}
+
 // ActionResponse 表示传输层返回给调用方的标准响应，Data 字段已解码.
 type ActionResponse[T any] struct {
 	Status  ActionResponseStatus  `json:"status"`            // ok | async | failed

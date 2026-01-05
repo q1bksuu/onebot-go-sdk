@@ -1,4 +1,4 @@
-package server
+package dispatcher
 
 import (
 	"context"

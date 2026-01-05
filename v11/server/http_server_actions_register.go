@@ -6,6 +6,7 @@ package server
 import (
 	"context"
 
+	"github.com/q1bksuu/onebot-go-sdk/v11/dispatcher"
 	"github.com/q1bksuu/onebot-go-sdk/v11/entity"
 )
 
@@ -138,60 +139,60 @@ type OneBotService interface {
 }
 
 // RegisterGenerated registers actions to dispatcher.
-func RegisterGenerated(d *Dispatcher, svc OneBotService) {
+func RegisterGenerated(d *dispatcher.Dispatcher, svc OneBotService) {
 	// Group: message
-	d.Register("send_private_msg", APIFuncToActionHandler(svc.SendPrivateMsg))
-	d.Register("send_group_msg", APIFuncToActionHandler(svc.SendGroupMsg))
-	d.Register("send_msg", APIFuncToActionHandler(svc.SendMsg))
-	d.Register("delete_msg", APIFuncToActionHandler(svc.DeleteMsg))
-	d.Register("get_msg", APIFuncToActionHandler(svc.GetMsg))
-	d.Register("get_forward_msg", APIFuncToActionHandler(svc.GetForwardMsg))
+	d.Register("send_private_msg", dispatcher.APIFuncToActionHandler(svc.SendPrivateMsg))
+	d.Register("send_group_msg", dispatcher.APIFuncToActionHandler(svc.SendGroupMsg))
+	d.Register("send_msg", dispatcher.APIFuncToActionHandler(svc.SendMsg))
+	d.Register("delete_msg", dispatcher.APIFuncToActionHandler(svc.DeleteMsg))
+	d.Register("get_msg", dispatcher.APIFuncToActionHandler(svc.GetMsg))
+	d.Register("get_forward_msg", dispatcher.APIFuncToActionHandler(svc.GetForwardMsg))
 
 	// Group: friend
-	d.Register("send_like", APIFuncToActionHandler(svc.SendLike))
-	d.Register("set_friend_add_request", APIFuncToActionHandler(svc.SetFriendAddRequest))
-	d.Register("get_stranger_info", APIFuncToActionHandler(svc.GetStrangerInfo))
-	d.Register("get_friend_list", APIFuncToActionHandler(svc.GetFriendList))
+	d.Register("send_like", dispatcher.APIFuncToActionHandler(svc.SendLike))
+	d.Register("set_friend_add_request", dispatcher.APIFuncToActionHandler(svc.SetFriendAddRequest))
+	d.Register("get_stranger_info", dispatcher.APIFuncToActionHandler(svc.GetStrangerInfo))
+	d.Register("get_friend_list", dispatcher.APIFuncToActionHandler(svc.GetFriendList))
 
 	// Group: group_admin
-	d.Register("set_group_kick", APIFuncToActionHandler(svc.SetGroupKick))
-	d.Register("set_group_ban", APIFuncToActionHandler(svc.SetGroupBan))
-	d.Register("set_group_anonymous_ban", APIFuncToActionHandler(svc.SetGroupAnonymousBan))
-	d.Register("set_group_whole_ban", APIFuncToActionHandler(svc.SetGroupWholeBan))
-	d.Register("set_group_admin", APIFuncToActionHandler(svc.SetGroupAdmin))
-	d.Register("set_group_anonymous", APIFuncToActionHandler(svc.SetGroupAnonymous))
-	d.Register("set_group_card", APIFuncToActionHandler(svc.SetGroupCard))
-	d.Register("set_group_name", APIFuncToActionHandler(svc.SetGroupName))
-	d.Register("set_group_leave", APIFuncToActionHandler(svc.SetGroupLeave))
-	d.Register("set_group_special_title", APIFuncToActionHandler(svc.SetGroupSpecialTitle))
-	d.Register("set_group_add_request", APIFuncToActionHandler(svc.SetGroupAddRequest))
+	d.Register("set_group_kick", dispatcher.APIFuncToActionHandler(svc.SetGroupKick))
+	d.Register("set_group_ban", dispatcher.APIFuncToActionHandler(svc.SetGroupBan))
+	d.Register("set_group_anonymous_ban", dispatcher.APIFuncToActionHandler(svc.SetGroupAnonymousBan))
+	d.Register("set_group_whole_ban", dispatcher.APIFuncToActionHandler(svc.SetGroupWholeBan))
+	d.Register("set_group_admin", dispatcher.APIFuncToActionHandler(svc.SetGroupAdmin))
+	d.Register("set_group_anonymous", dispatcher.APIFuncToActionHandler(svc.SetGroupAnonymous))
+	d.Register("set_group_card", dispatcher.APIFuncToActionHandler(svc.SetGroupCard))
+	d.Register("set_group_name", dispatcher.APIFuncToActionHandler(svc.SetGroupName))
+	d.Register("set_group_leave", dispatcher.APIFuncToActionHandler(svc.SetGroupLeave))
+	d.Register("set_group_special_title", dispatcher.APIFuncToActionHandler(svc.SetGroupSpecialTitle))
+	d.Register("set_group_add_request", dispatcher.APIFuncToActionHandler(svc.SetGroupAddRequest))
 
 	// Group: group_info
-	d.Register("get_group_info", APIFuncToActionHandler(svc.GetGroupInfo))
-	d.Register("get_group_list", APIFuncToActionHandler(svc.GetGroupList))
-	d.Register("get_group_member_info", APIFuncToActionHandler(svc.GetGroupMemberInfo))
-	d.Register("get_group_member_list", APIFuncToActionHandler(svc.GetGroupMemberList))
-	d.Register("get_group_honor_info", APIFuncToActionHandler(svc.GetGroupHonorInfo))
+	d.Register("get_group_info", dispatcher.APIFuncToActionHandler(svc.GetGroupInfo))
+	d.Register("get_group_list", dispatcher.APIFuncToActionHandler(svc.GetGroupList))
+	d.Register("get_group_member_info", dispatcher.APIFuncToActionHandler(svc.GetGroupMemberInfo))
+	d.Register("get_group_member_list", dispatcher.APIFuncToActionHandler(svc.GetGroupMemberList))
+	d.Register("get_group_honor_info", dispatcher.APIFuncToActionHandler(svc.GetGroupHonorInfo))
 
 	// Group: account
-	d.Register("get_login_info", APIFuncToActionHandler(svc.GetLoginInfo))
-	d.Register("get_cookies", APIFuncToActionHandler(svc.GetCookies))
-	d.Register("get_csrf_token", APIFuncToActionHandler(svc.GetCsrfToken))
-	d.Register("get_credentials", APIFuncToActionHandler(svc.GetCredentials))
+	d.Register("get_login_info", dispatcher.APIFuncToActionHandler(svc.GetLoginInfo))
+	d.Register("get_cookies", dispatcher.APIFuncToActionHandler(svc.GetCookies))
+	d.Register("get_csrf_token", dispatcher.APIFuncToActionHandler(svc.GetCsrfToken))
+	d.Register("get_credentials", dispatcher.APIFuncToActionHandler(svc.GetCredentials))
 
 	// Group: media
-	d.Register("get_record", APIFuncToActionHandler(svc.GetRecord))
-	d.Register("get_image", APIFuncToActionHandler(svc.GetImage))
+	d.Register("get_record", dispatcher.APIFuncToActionHandler(svc.GetRecord))
+	d.Register("get_image", dispatcher.APIFuncToActionHandler(svc.GetImage))
 
 	// Group: capability
-	d.Register("can_send_image", APIFuncToActionHandler(svc.CanSendImage))
-	d.Register("can_send_record", APIFuncToActionHandler(svc.CanSendRecord))
+	d.Register("can_send_image", dispatcher.APIFuncToActionHandler(svc.CanSendImage))
+	d.Register("can_send_record", dispatcher.APIFuncToActionHandler(svc.CanSendRecord))
 
 	// Group: system
-	d.Register("get_status", APIFuncToActionHandler(svc.GetStatus))
-	d.Register("get_version_info", APIFuncToActionHandler(svc.GetVersionInfo))
-	d.Register("set_restart", APIFuncToActionHandler(svc.SetRestart))
-	d.Register("clean_cache", APIFuncToActionHandler(svc.CleanCache))
+	d.Register("get_status", dispatcher.APIFuncToActionHandler(svc.GetStatus))
+	d.Register("get_version_info", dispatcher.APIFuncToActionHandler(svc.GetVersionInfo))
+	d.Register("set_restart", dispatcher.APIFuncToActionHandler(svc.SetRestart))
+	d.Register("clean_cache", dispatcher.APIFuncToActionHandler(svc.CleanCache))
 
 }
 

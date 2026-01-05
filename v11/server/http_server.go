@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/q1bksuu/onebot-go-sdk/v11/dispatcher"
 	"github.com/q1bksuu/onebot-go-sdk/v11/entity"
 	"github.com/q1bksuu/onebot-go-sdk/v11/internal/util"
 )
@@ -37,10 +38,11 @@ type HTTPConfig struct {
 
 // HTTPServer 实现 OneBot HTTP 传输层.
 type HTTPServer struct {
-	srv           *http.Server
+	*BaseServer
+
 	mux           *http.ServeMux
 	cfg           HTTPConfig
-	actionHandler ActionRequestHandler
+	actionHandler dispatcher.ActionRequestHandler
 	eventHandler  EventRequestHandler // 可选的事件处理器
 }
 
@@ -48,7 +50,7 @@ type HTTPServer struct {
 type HTTPServerOption func(*HTTPServer)
 
 // WithActionHandler 设置动作请求处理器选项.
-func WithActionHandler(actionHandler ActionRequestHandler) HTTPServerOption {
+func WithActionHandler(actionHandler dispatcher.ActionRequestHandler) HTTPServerOption {
 	return func(s *HTTPServer) {
 		s.actionHandler = actionHandler
 	}
@@ -64,7 +66,14 @@ func WithEventHandler(eventHandler EventRequestHandler) HTTPServerOption {
 // NewHTTPServer 创建 HTTPServer.若传入 mux 为 nil，则使用自建 ServeMux.
 func NewHTTPServer(cfg HTTPConfig, opts ...HTTPServerOption) *HTTPServer {
 	mux := http.NewServeMux()
-	cfg.APIPathPrefix = "/" + strings.Trim(cfg.APIPathPrefix, "/") + "/"
+
+	trimmedPrefix := strings.Trim(cfg.APIPathPrefix, "/")
+	if trimmedPrefix == "" {
+		cfg.APIPathPrefix = "/"
+	} else {
+		cfg.APIPathPrefix = "/" + trimmedPrefix + "/"
+	}
+
 	server := &HTTPServer{cfg: cfg, mux: mux}
 
 	// 应用选项
@@ -80,48 +89,21 @@ func NewHTTPServer(cfg HTTPConfig, opts ...HTTPServerOption) *HTTPServer {
 		mux.HandleFunc(eventPath, server.handleEvent)
 	}
 
-	server.srv = &http.Server{
+	baseCfg := ServerConfig{
 		Addr:              cfg.Addr,
-		Handler:           mux,
 		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
 		ReadTimeout:       cfg.ReadTimeout,
 		WriteTimeout:      cfg.WriteTimeout,
 		IdleTimeout:       cfg.IdleTimeout,
 	}
+	server.BaseServer = NewBaseServer(baseCfg, mux)
 
 	return server
 }
 
 // Start 启动 HTTP 服务器（异步监听）.
 func (s *HTTPServer) Start(ctx context.Context) error {
-	errCh := make(chan error, 1)
-
-	go func() {
-		err := s.srv.ListenAndServe()
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			errCh <- err
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-		shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
-
-		return s.Shutdown(shutdownCtx)
-	case err := <-errCh:
-		return fmt.Errorf("http server listen and serve failed: %w", err)
-	}
-}
-
-// Shutdown 优雅关闭.
-func (s *HTTPServer) Shutdown(ctx context.Context) error {
-	err := s.srv.Shutdown(ctx)
-	if err != nil {
-		return fmt.Errorf("http server shutdown failed: %w", err)
-	}
-
-	return nil
+	return s.BaseServer.Start(ctx, nil)
 }
 
 // Handler 返回 http.Handler，便于挂载到外部路由.
@@ -493,7 +475,7 @@ func (s *HTTPServer) writeJSON(w http.ResponseWriter, status int, v any) {
 
 func (s *HTTPServer) writeError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, ErrActionNotFound):
+	case errors.Is(err, dispatcher.ErrActionNotFound):
 		http.NotFound(w, nil)
 	case errors.Is(err, ErrBadRequest):
 		http.Error(w, err.Error(), http.StatusBadRequest)

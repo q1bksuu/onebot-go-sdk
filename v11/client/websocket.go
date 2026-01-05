@@ -2,6 +2,8 @@ package client
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/q1bksuu/onebot-go-sdk/v11/dispatcher"
 	"github.com/q1bksuu/onebot-go-sdk/v11/entity"
 	"github.com/q1bksuu/onebot-go-sdk/v11/server"
 )
@@ -29,7 +32,7 @@ type WSClientOption func(*WebSocketClient)
 // WebSocketClient 实现 OneBot 反向 WebSocket 传输层.
 type WebSocketClient struct {
 	cfg           WSClientConfig
-	actionHandler server.ActionRequestHandler
+	actionHandler dispatcher.ActionRequestHandler
 
 	// 连接管理
 	mu   sync.Mutex
@@ -351,6 +354,61 @@ func (c *WebSocketClient) readMessage(conn *websocket.Conn) ([]byte, error) {
 }
 
 // handleActionMessage 处理动作请求消息.
-func (c *WebSocketClient) handleActionMessage(_ context.Context, _ []byte) any {
-	panic("unimplemented")
+func (c *WebSocketClient) handleActionMessage(ctx context.Context, data []byte) any {
+	var reqEnv entity.ActionRequestEnvelope
+
+	err := json.Unmarshal(data, &reqEnv)
+	if err != nil {
+		return &entity.ActionResponseEnvelope{
+			ActionRawResponse: entity.ActionRawResponse{
+				Status:  entity.StatusFailed,
+				Retcode: 1400,
+				Message: "invalid json",
+			},
+		}
+	}
+
+	req := &entity.ActionRequest{Action: reqEnv.Action, Params: reqEnv.Params}
+
+	resp, err := c.actionHandler.HandleActionRequest(ctx, req)
+	if err != nil {
+		mapped := mapHandlerError(err)
+
+		return &entity.ActionResponseEnvelope{
+			ActionRawResponse: *mapped,
+			Echo:              reqEnv.Echo,
+		}
+	}
+
+	if resp == nil {
+		resp = &entity.ActionRawResponse{Status: entity.StatusFailed, Retcode: -1, Message: "empty response"}
+	}
+
+	return &entity.ActionResponseEnvelope{
+		ActionRawResponse: *resp,
+		Echo:              reqEnv.Echo,
+	}
+}
+
+func mapHandlerError(err error) *entity.ActionRawResponse {
+	switch {
+	case errors.Is(err, dispatcher.ErrActionNotFound):
+		return &entity.ActionRawResponse{
+			Status:  entity.StatusFailed,
+			Retcode: 1404,
+			Message: err.Error(),
+		}
+	case errors.Is(err, server.ErrBadRequest):
+		return &entity.ActionRawResponse{
+			Status:  entity.StatusFailed,
+			Retcode: 1400,
+			Message: err.Error(),
+		}
+	default:
+		return &entity.ActionRawResponse{
+			Status:  entity.StatusFailed,
+			Retcode: 1500,
+			Message: err.Error(),
+		}
+	}
 }

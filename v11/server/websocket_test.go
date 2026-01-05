@@ -11,12 +11,13 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/q1bksuu/onebot-go-sdk/v11/dispatcher"
 	"github.com/q1bksuu/onebot-go-sdk/v11/entity"
 	"github.com/q1bksuu/onebot-go-sdk/v11/internal/util"
 	"github.com/stretchr/testify/require"
 )
 
-// stubHandler is a simple ActionRequestHandler for testing.
+// stubHandler is a simple dispatcher.ActionRequestHandler for testing.
 type stubHandler struct {
 	resp *entity.ActionRawResponse
 	err  error
@@ -30,12 +31,12 @@ func (h *stubHandler) HandleActionRequest(
 
 // helper to quickly build WS server backed by WebSocketServer mux.
 func newTestWebSocketServer(
-	t *testing.T, cfg WSConfig, handler ActionRequestHandler,
+	t *testing.T, cfg WSConfig, handler dispatcher.ActionRequestHandler,
 ) (*WebSocketServer, *httptest.Server) {
 	t.Helper()
 
 	wsServer := NewWebSocketServer(cfg, handler)
-	testServer := httptest.NewServer(wsServer.srv.Handler)
+	testServer := httptest.NewServer(wsServer.Srv.Handler)
 
 	return wsServer, testServer
 }
@@ -178,11 +179,11 @@ func TestHandleActionMessageMapping(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		t.Parallel()
 
-		wsServer := &WebSocketServer{handler: &stubHandler{err: ErrActionNotFound}}
+		wsServer := &WebSocketServer{handler: &stubHandler{err: dispatcher.ErrActionNotFound}}
 		resp := wsServer.handleActionMessage(ctx, []byte(`{"action":"x","params":{}}`))
 		require.Equal(t, entity.ActionResponseRetcode(1404), resp.Retcode)
 		require.Equal(t, entity.StatusFailed, resp.Status)
-		require.Equal(t, ErrActionNotFound.Error(), resp.Message)
+		require.Equal(t, dispatcher.ErrActionNotFound.Error(), resp.Message)
 	})
 
 	t.Run("bad request", func(t *testing.T) {
@@ -246,18 +247,28 @@ func TestWriteHandshakeError(t *testing.T) {
 	t.Run("401", func(t *testing.T) {
 		t.Parallel()
 
-		rr := httptest.NewRecorder()
-		wsServer.writeHandshakeError(rr, &actionResponseEnvelope{Retcode: 1401, Status: entity.StatusFailed})
-		require.Equal(t, http.StatusUnauthorized, rr.Code)
-		require.Equal(t, "application/json", rr.Header().Get("Content-Type"))
+		recorder := httptest.NewRecorder()
+		wsServer.writeHandshakeError(recorder, &entity.ActionResponseEnvelope{
+			ActionRawResponse: entity.ActionRawResponse{
+				Retcode: 1401,
+				Status:  entity.StatusFailed,
+			},
+		})
+		require.Equal(t, http.StatusUnauthorized, recorder.Code)
+		require.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
 	})
 
 	t.Run("403", func(t *testing.T) {
 		t.Parallel()
 
-		rr := httptest.NewRecorder()
-		wsServer.writeHandshakeError(rr, &actionResponseEnvelope{Retcode: 1403, Status: entity.StatusFailed})
-		require.Equal(t, http.StatusForbidden, rr.Code)
+		recorder := httptest.NewRecorder()
+		wsServer.writeHandshakeError(recorder, &entity.ActionResponseEnvelope{
+			ActionRawResponse: entity.ActionRawResponse{
+				Retcode: 1403,
+				Status:  entity.StatusFailed,
+			},
+		})
+		require.Equal(t, http.StatusForbidden, recorder.Code)
 	})
 }
 
@@ -306,7 +317,7 @@ func TestHandleAPIAndUniversalFlow(t *testing.T) {
 		_ = conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 
 		require.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"action":"ping","params":{},"echo":"e"}`)))
-		msg := readJSON[*actionResponseEnvelope](t, conn)
+		msg := readJSON[*entity.ActionResponseEnvelope](t, conn)
 		require.Equal(t, entity.RetcodeSuccess, msg.Retcode)
 		require.JSONEq(t, `"e"`, string(msg.Echo))
 	})
@@ -325,7 +336,7 @@ func TestHandleAPIAndUniversalFlow(t *testing.T) {
 		_ = conn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
 
 		require.NoError(t, conn.WriteMessage(websocket.TextMessage, []byte(`{"action":"ping","params":{},"echo":"u"}`)))
-		msg := readJSON[*actionResponseEnvelope](t, conn)
+		msg := readJSON[*entity.ActionResponseEnvelope](t, conn)
 		require.Equal(t, entity.RetcodeSuccess, msg.Retcode)
 		require.JSONEq(t, `"u"`, string(msg.Echo))
 	})

@@ -10,6 +10,14 @@
 
 ## 变更记录 (Changelog)
 
+### 2026-01-05
+
+- **更新**: 同步文档与实际代码实现
+- **修正**: Generator 结构体字段名
+- **修正**: generator.go 行数 (612 行)
+- **添加**: 新增 `templateField`, `templateStruct`, `structDef` 结构体说明
+- **添加**: 泛型支持说明 (`receiverTypeParams`)
+
 ### 2025-12-21 15:53:08
 
 - **初始化**: 生成工具文档
@@ -26,6 +34,7 @@ entity-gen 工具负责：
 3. **空指针安全**: 所有 Getter 方法包含空指针检查
 4. **链式调用支持**: Setter 方法返回接收者指针
 5. **类型别名识别**: 自动扫描和识别自定义类型别名
+6. **泛型支持**: 支持带类型参数的泛型结构体
 
 ---
 
@@ -127,7 +136,7 @@ func (r *User) SetTags(v []*Tag) *User
 
 ### 外部依赖
 
-无（仅使用标准库 `go/ast`, `go/parser`, `go/format`）
+无（仅使用标准库 `go/ast`, `go/parser`, `go/format`, `go/token`, `text/template`）
 
 ### 配置
 
@@ -140,21 +149,49 @@ func (r *User) SetTags(v []*Tag) *User
 ### 核心类型
 
 ```go
+// Generator 代码生成器主结构
 type Generator struct {
-    filename          string                  // 输入文件路径
-    fset              *token.FileSet          // 文件集
-    file              *ast.File               // 主文件 AST
-    customTypeAliases map[string]bool         // 自定义类型别名缓存
-    constFiles        []string                // 常量文件列表
+    filename          string           // 输入文件路径
+    fileSet           *token.FileSet   // 文件集
+    astFile           *ast.File        // 主文件 AST
+    customTypeAliases map[string]bool  // 自定义类型别名缓存（如 string 的别名）
+    basicTypesCache   map[string]bool  // Go 基本类型缓存，提升性能
 }
 
+// fieldInfo 字段分析信息
 type fieldInfo struct {
-    name         string  // 字段名
-    typeName     string  // 类型名称
-    isPointer    bool    // 是否为指针
-    isBasic      bool    // 是否为基本类型
-    comments     string  // 注释内容
-    receiverType string  // 接收者类型
+    name               string  // 字段名
+    typeName           string  // 类型名称
+    isPointer          bool    // 是否为指针
+    isBasic            bool    // 是否为基本类型
+    comments           string  // 注释内容
+    receiverType       string  // 接收者类型
+    receiverTypeParams string  // 接收者类型参数（泛型支持）
+}
+
+// templateField 模板渲染字段
+type templateField struct {
+    HasComments        bool    // 是否有注释
+    Comments           string  // 注释内容
+    ReceiverWithParams string  // 带类型参数的接收者
+    GetterName         string  // Getter 方法名
+    SetterName         string  // Setter 方法名
+    ReturnType         string  // 返回类型
+    ParamType          string  // 参数类型
+    FieldName          string  // 字段名
+    IsBasicPointer     bool    // 是否为基本类型指针
+}
+
+// templateStruct 模板渲染结构体
+type templateStruct struct {
+    Fields []templateField
+}
+
+// structDef 结构体定义信息
+type structDef struct {
+    name       string          // 结构体名称
+    typeParams string          // 类型参数（泛型）
+    structType *ast.StructType // AST 结构体类型
 }
 ```
 
@@ -169,6 +206,7 @@ type fieldInfo struct {
 2. 结构体发现阶段
    ├─ 遍历 AST 寻找目标结构体
    ├─ 如果指定了 -type 参数，仅处理匹配的类型
+   ├─ 提取类型参数（泛型支持）
    └─ 提取所有导出字段（首字母大写）
 
 3. 字段分析阶段
@@ -177,7 +215,7 @@ type fieldInfo struct {
    │  ├─ Go 内置：int, string, bool 等
    │  └─ 自定义别名：type Status string
    ├─ 提取注释文档
-   └─ 记录接收者类型
+   └─ 记录接收者类型和类型参数
 
 4. 代码生成阶段
    ├─ 为每个字段生成 Getter
@@ -188,9 +226,10 @@ type fieldInfo struct {
    │  ├─ 基本类型指针：自动取地址
    │  ├─ 复杂类型：直接赋值
    │  └─ 返回接收者（支持链式调用）
-   └─ 使用 go/format 格式化输出
+   └─ 使用 text/template 渲染代码
 
 5. 文件写入阶段
+   ├─ 使用 go/format 格式化输出
    └─ 写入到输出文件（默认 {filename}_setter_getter.go）
 ```
 
@@ -216,6 +255,31 @@ type fieldInfo struct {
 3. **手动指定文件**：通过 `-consts` 参数指定
 
 识别形如 `type MyString string` 的定义，并记录到 `customTypeAliases`。
+
+---
+
+## 代码模板
+
+生成器使用 `text/template` 渲染代码，核心模板结构：
+
+```go
+// Getter 模板
+func (r *{{.ReceiverWithParams}}) {{.GetterName}}() {{.ReturnType}} {
+    if r == nil {
+        var zero {{.ReturnType}}
+        return zero
+    }
+    // 基本类型指针：额外 nil 检查 + 解引用
+    // 其他类型：直接返回
+}
+
+// Setter 模板
+func (r *{{.ReceiverWithParams}}) {{.SetterName}}(v {{.ParamType}}) *{{.ReceiverWithParams}} {
+    // 基本类型指针：val := v; r.Field = &val
+    // 其他类型：r.Field = v
+    return r
+}
+```
 
 ---
 
@@ -249,8 +313,13 @@ Age *int64
 
 // 生成的方法
 func (r *User) GetAge() int64 {  // 返回值类型，不是 *int64
-    if r == nil || r.Age == nil {
-        return 0  // 安全的零值
+    if r == nil {
+        var zero int64
+        return zero  // 安全的零值
+    }
+    if r.Age == nil {
+        var zero int64
+        return zero
     }
     return *r.Age  // 自动解引用
 }
@@ -279,7 +348,8 @@ Profile *UserProfile  // UserProfile 是一个大结构体
 // 生成的方法
 func (r *User) GetProfile() *UserProfile {  // 返回指针
     if r == nil {
-        return nil
+        var zero *UserProfile
+        return zero
     }
     return r.Profile  // 不解引用，避免拷贝
 }
@@ -287,10 +357,10 @@ func (r *User) GetProfile() *UserProfile {  // 返回指针
 
 **Q: 如何判断是否为基本类型？**
 
-内置基本类型列表（generator.go 中的 `basicTypesCache`）：
+内置基本类型列表（generator.go 中的 `initBasicTypesCache`）：
 
 ```
-bool, string
+bool, string, error
 int, int8, int16, int32, int64
 uint, uint8, uint16, uint32, uint64, uintptr
 float32, float64
@@ -333,6 +403,23 @@ rm v11/entity/*_setter_getter.go
 go generate ./v11/entity
 ```
 
+**Q: 支持泛型吗？**
+
+支持。工具会识别带类型参数的结构体：
+
+```go
+type Container[T any] struct {
+    Value T
+}
+```
+
+生成的方法会保留类型参数：
+
+```go
+func (r *Container[T]) GetValue() T { ... }
+func (r *Container[T]) SetValue(v T) *Container[T] { ... }
+```
+
 ---
 
 ## 相关文件清单
@@ -341,8 +428,8 @@ go generate ./v11/entity
 
 | 文件           | 行数  | 职责                              |
 | -------------- | ----- | --------------------------------- |
-| `main.go`      | ~146  | 命令行参数解析和流程控制          |
-| `generator.go` | ~500+ | AST 分析和代码生成逻辑            |
+| `main.go`      | 146   | 命令行参数解析和流程控制          |
+| `generator.go` | 612   | AST 分析和代码生成逻辑            |
 | `README.md`    | ~350  | 完整的工具文档                    |
 
 ### 使用示例
@@ -367,4 +454,4 @@ go generate ./v11/entity
 
 ---
 
-*工具文档生成时间: 2025-12-21 15:53:08*
+*工具文档更新时间: 2026-01-05*

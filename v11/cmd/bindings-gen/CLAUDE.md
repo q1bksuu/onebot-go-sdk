@@ -10,6 +10,12 @@
 
 ## 变更记录 (Changelog)
 
+### 2026-01-05
+
+- **更新**: 同步文档与实际代码实现
+- **修正**: 更新生成代码示例（客户端返回 `ActionResponse[T]`、服务端使用 `dispatcher.APIFuncToActionHandler`）
+- **修正**: 更新行数统计
+
 ### 2025-12-21 15:53:08
 
 - **初始化**: 生成工具文档
@@ -22,10 +28,10 @@
 bindings-gen 工具负责：
 
 1. **客户端方法生成**: 为 `HTTPClient` 生成所有 OneBot API 的封装方法
-2. **服务端注册代码生成**: 生成服务端 action 注册辅助代码
+2. **服务端注册代码生成**: 生成服务接口定义、聚合接口、Unimplemented 实现和批量注册函数
 3. **配置驱动**: 通过 YAML 配置文件声明式定义所有 API
 4. **分组管理**: 支持按功能分组（消息、好友、群管理等）
-5. **类型安全**: 生成的代码使用泛型，确保类型安全
+5. **类型安全**: 生成的代码使用泛型 `ActionResponse[T]`，确保类型安全
 
 ---
 
@@ -71,12 +77,12 @@ go generate ./...
 
 ```yaml
 combined_service:
-  name: OneBotService              # 总服务名称
-  desc: OneBot 11 协议服务          # 总服务描述
+  name: OneBotService              # 聚合服务接口名称
+  desc: OneBot 11 协议服务          # 聚合服务描述
 
 groups:
   - name: message                  # 分组名称
-    service_name: MessageService   # 分组服务名称
+    service_name: MessageService   # 分组服务接口名称
     service_desc: 消息服务          # 分组服务描述
     actions:
       - method: SendPrivateMsg     # 方法名（PascalCase）
@@ -85,7 +91,7 @@ groups:
         request: entity.SendPrivateMsgRequest   # 请求类型（完整路径）
         response: entity.SendPrivateMsgResponse # 响应类型（完整路径）
         http_method: POST          # HTTP 方法（可选，默认 POST）
-        path: /send_private_msg    # URL 路径（可选，默认 /{action}）
+        path: /send_private_msg    # URL 路径（可选，默认空）
 
   - name: friend
     service_name: FriendService
@@ -124,9 +130,10 @@ groups:
 ### 核心类型 (models.go)
 
 ```go
+// Config 配置根.
 type Config struct {
-    CombinedService CombinedService `yaml:"combined_service"`
     Groups          []Group         `yaml:"groups"`
+    CombinedService CombinedService `yaml:"combined_service"`
 }
 
 type CombinedService struct {
@@ -134,6 +141,7 @@ type CombinedService struct {
     Desc string `yaml:"desc"`  // 如 "OneBot 11 协议服务"
 }
 
+// Group 表示一组业务接口，可生成独立 Service.
 type Group struct {
     Name        string   `yaml:"name"`         // 如 "message"
     ServiceName string   `yaml:"service_name"` // 如 "MessageService"
@@ -141,14 +149,21 @@ type Group struct {
     Actions     []Action `yaml:"actions"`
 }
 
+// Action 定义单个 action 的生成规则.
 type Action struct {
-    Method     string `yaml:"method"`      // 如 "SendPrivateMsg"
-    Action     string `yaml:"action"`      // 如 "send_private_msg"
-    Desc       string `yaml:"desc"`        // 如 "发送私聊消息"
-    Request    string `yaml:"request"`     // 如 "entity.SendPrivateMsgRequest"
-    Response   string `yaml:"response"`    // 如 "entity.SendPrivateMsgResponse"
-    HTTPMethod string `yaml:"http_method"` // 如 "POST" (可选)
-    Path       string `yaml:"path"`        // 如 "/send_private_msg" (可选)
+    // Method 生成的 Service 方法名（必填）.
+    Method string `yaml:"method"`
+    // Action 协议动作名（必填）.
+    Action string `yaml:"action"`
+    // Desc 方法描述（必填）.
+    Desc string `yaml:"desc"`
+    // Request / Response 类型（必填），需包含包名，例如 entity.SendPrivateMsgRequest.
+    Request  string `yaml:"request"`
+    Response string `yaml:"response"`
+    // HTTPMethod 可选，默认 POST，可指定 GET/POST.
+    HTTPMethod string `yaml:"http_method"`
+    // Path 可选，默认 "/{action}".
+    Path string `yaml:"path"`
 }
 ```
 
@@ -159,16 +174,15 @@ type Action struct {
    ↓
 2. 解析 YAML 到 Config 结构体
    ↓
-3. 遍历所有 groups 和 actions
+3. 验证配置
+   ├─ 检查 groups 不为空
+   ├─ 检查每个 group 的 name 不为空
+   ├─ 检查每个 action 的 method、request、response 不为空
+   └─ 检查 http_method 为空或 GET/POST
    ↓
-4. 生成客户端方法
-   ├─ 方法签名：func (c *HTTPClient) {Method}(ctx context.Context, req *{Request}) (*{Response}, error)
-   ├─ 方法体：调用 c.do() 执行 HTTP 请求
-   └─ 文档注释：{Desc}
+4. 遍历所有 groups 和 actions
    ↓
-5. 生成服务端注册代码
-   ├─ 注册辅助函数：RegisterXxxActions(dispatcher *Dispatcher, handler XxxHandler)
-   └─ 接口定义：XxxHandler interface { Handle{Method}(...) }
+5. 渲染模板并格式化
    ↓
 6. 写入输出文件
 ```
@@ -178,20 +192,27 @@ type Action struct {
 ```go
 // 生成到 client/http_client_actions.go
 
-// SendPrivateMsg 发送私聊消息
-func (c *HTTPClient) SendPrivateMsg(ctx context.Context, req *entity.SendPrivateMsgRequest) (*entity.SendPrivateMsgResponse, error) {
-    rawResp, err := c.do(ctx, "send_private_msg", http.MethodPost, req)
+// SendPrivateMsg calls action "send_private_msg".
+func (c *HTTPClient) SendPrivateMsg(
+    ctx context.Context,
+    req *entity.SendPrivateMsgRequest,
+    opts ...CallOption,
+) (*entity.ActionResponse[entity.SendPrivateMsgResponse], error) {
+    rawResponse, err := c.do(ctx, "", "", req, opts...)
     if err != nil {
         return nil, err
     }
 
-    var resp entity.SendPrivateMsgResponse
-    err = json.Unmarshal(rawResp.Data, &resp)
-    if err != nil {
-        return nil, fmt.Errorf("unmarshal response: %w", err)
+    out := entity.ActionResponse[entity.SendPrivateMsgResponse]{
+        Status:  rawResponse.Status,
+        Retcode: rawResponse.Retcode,
+        Message: rawResponse.Message,
     }
-
-    return &resp, nil
+    err = json.Unmarshal(rawResponse.GetData(), &out.Data)
+    if err != nil {
+        return nil, err
+    }
+    return &out, nil
 }
 ```
 
@@ -200,20 +221,50 @@ func (c *HTTPClient) SendPrivateMsg(ctx context.Context, req *entity.SendPrivate
 ```go
 // 生成到 server/http_server_actions_register.go
 
-// MessageHandler 消息服务处理器接口
-type MessageHandler interface {
-    HandleSendPrivateMsg(ctx context.Context, req *entity.SendPrivateMsgRequest) (*entity.ActionResponse[entity.SendPrivateMsgResponse], error)
-    HandleSendGroupMsg(ctx context.Context, req *entity.SendGroupMsgRequest) (*entity.ActionResponse[entity.SendGroupMsgResponse], error)
+// MessageService 消息服务
+type MessageService interface {
+    // SendPrivateMsg 发送私聊消息.
+    SendPrivateMsg(ctx context.Context, req *entity.SendPrivateMsgRequest) (*entity.ActionResponse[entity.SendPrivateMsgResponse], error)
+    // SendGroupMsg 发送群消息.
+    SendGroupMsg(ctx context.Context, req *entity.SendGroupMsgRequest) (*entity.ActionResponse[entity.SendGroupMsgResponse], error)
     // ... 其他方法
 }
 
-// RegisterMessageActions 注册消息服务的所有 action
-func RegisterMessageActions(dispatcher *Dispatcher, handler MessageHandler) {
-    binder := NewBinder("send_private_msg", handler.HandleSendPrivateMsg)
-    dispatcher.Register(binder.Action(), binder.Handler())
+// OneBotService aggregates all service groups.
+type OneBotService interface {
+    // 消息服务.
+    MessageService
+    // 好友与陌生人管理.
+    FriendService
+    // ... 其他分组服务
+}
 
+// RegisterGenerated registers actions to dispatcher.
+func RegisterGenerated(d *dispatcher.Dispatcher, svc OneBotService) {
+    // Group: message
+    d.Register("send_private_msg", dispatcher.APIFuncToActionHandler(svc.SendPrivateMsg))
+    d.Register("send_group_msg", dispatcher.APIFuncToActionHandler(svc.SendGroupMsg))
     // ... 其他 action
 }
+
+// UnimplementedOneBotService aggregates unimplemented group services.
+type UnimplementedOneBotService struct {
+    UnimplementedMessageService
+    UnimplementedFriendService
+    // ... 其他 Unimplemented
+}
+
+// UnimplementedMessageService provides default empty implementations.
+type UnimplementedMessageService struct{}
+
+// SendPrivateMsg 发送私聊消息 (unimplemented).
+func (*UnimplementedMessageService) SendPrivateMsg(
+    ctx context.Context,
+    req *entity.SendPrivateMsgRequest,
+) (*entity.ActionResponse[entity.SendPrivateMsgResponse], error) {
+    panic("unimplemented")
+}
+// ... 其他 unimplemented 方法
 ```
 
 ---
@@ -228,9 +279,10 @@ func RegisterMessageActions(dispatcher *Dispatcher, handler MessageHandler) {
 
 ### 质量保证
 
-- **类型安全**: 使用泛型确保请求/响应类型匹配
+- **类型安全**: 使用泛型 `ActionResponse[T]` 确保请求/响应类型匹配
 - **一致性**: 所有 API 方法遵循统一的命名和结构
 - **可维护性**: 通过配置文件管理，无需手写大量样板代码
+- **代码格式化**: 使用 `go/format` 自动格式化生成的代码
 
 ---
 
@@ -316,24 +368,32 @@ groups:
         response: entity.CustomResponse
 ```
 
+**Q: Unimplemented 类型有什么用？**
+
+`UnimplementedXxxService` 类型提供了默认的空实现，方便：
+
+- 快速搭建服务骨架
+- 只实现需要的方法，其他方法返回 panic（开发阶段提醒未实现）
+- 嵌入到自定义服务中，逐步实现各个方法
+
 ---
 
 ## 相关文件清单
 
 ### 主要源文件
 
-| 文件           | 行数估算 | 职责                              |
-| -------------- | -------- | --------------------------------- |
-| `main.go`      | ~200     | 命令行参数解析、模板渲染、代码生成|
-| `models.go`    | ~50      | 配置文件数据结构定义              |
-| `config.yaml`  | ~240     | 所有 API 的声明式配置             |
+| 文件           | 行数  | 职责                              |
+| -------------- | ----- | --------------------------------- |
+| `main.go`      | ~315  | 命令行参数解析、配置验证、模板渲染、代码生成 |
+| `models.go`    | ~38   | 配置文件数据结构定义              |
+| `config.yaml`  | ~239  | 所有 API 的声明式配置             |
 
 ### 输出文件
 
 | 文件                                  | 生成位置     | 内容                              |
 | ------------------------------------- | ------------ | --------------------------------- |
 | `http_client_actions.go`              | `v11/client` | 38 个客户端 API 方法              |
-| `http_server_actions_register.go`     | `v11/server` | 服务端注册辅助函数和接口定义      |
+| `http_server_actions_register.go`     | `v11/server` | 服务接口、聚合接口、Unimplemented 实现、批量注册函数 |
 
 ---
 
@@ -347,4 +407,4 @@ groups:
 
 ---
 
-*工具文档生成时间: 2025-12-21 15:53:08*
+*工具文档更新时间: 2026-01-05*

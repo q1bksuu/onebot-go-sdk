@@ -208,6 +208,7 @@ package server
 import (
     "context"
 
+    "github.com/q1bksuu/onebot-go-sdk/v11/dispatcher"
     "github.com/q1bksuu/onebot-go-sdk/v11/entity"
 )
 
@@ -230,11 +231,11 @@ type {{.CombinedService.Name}} interface {
 }
 
 // RegisterGenerated registers actions to dispatcher.
-func RegisterGenerated(d *Dispatcher, svc {{.CombinedService.Name}}) {
+func RegisterGenerated(d *dispatcher.Dispatcher, svc {{.CombinedService.Name}}) {
 {{- range .Groups}}
     // Group: {{.Name}}
 {{- range .Actions}}
-    d.Register("{{.Action}}", APIFuncToActionHandler(svc.{{.Method}}))
+    d.Register("{{.Action}}", dispatcher.APIFuncToActionHandler(svc.{{.Method}}))
 {{- end}}
 {{end}}
 }
