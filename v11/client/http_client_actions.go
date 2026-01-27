@@ -16,7 +16,7 @@ func (c *HTTPClient) SendPrivateMsg(
 	req *entity.SendPrivateMsgRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SendPrivateMsgResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "send_private_msg", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (c *HTTPClient) SendGroupMsg(
 	req *entity.SendGroupMsgRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SendGroupMsgResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "send_group_msg", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (c *HTTPClient) SendMsg(
 	req *entity.SendMsgRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SendMsgResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "send_msg", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (c *HTTPClient) DeleteMsg(
 	req *entity.DeleteMsgRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.DeleteMsgResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "delete_msg", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +108,7 @@ func (c *HTTPClient) GetMsg(
 	req *entity.GetMsgRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetMsgResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_msg", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (c *HTTPClient) GetForwardMsg(
 	req *entity.GetForwardMsgRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetForwardMsgResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_forward_msg", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (c *HTTPClient) SendLike(
 	req *entity.SendLikeRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SendLikeResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "send_like", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +177,7 @@ func (c *HTTPClient) SetFriendAddRequest(
 	req *entity.SetFriendAddRequestRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SetFriendAddRequestResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "set_friend_add_request", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +200,7 @@ func (c *HTTPClient) GetStrangerInfo(
 	req *entity.GetStrangerInfoRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetStrangerInfoResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_stranger_info", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,7 @@ func (c *HTTPClient) GetFriendList(
 	req *entity.GetFriendListRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetFriendListResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_friend_list", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,7 @@ func (c *HTTPClient) SetGroupKick(
 	req *entity.SetGroupKickRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SetGroupKickResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "set_group_kick", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -269,7 +269,7 @@ func (c *HTTPClient) SetGroupBan(
 	req *entity.SetGroupBanRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SetGroupBanResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "set_group_ban", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +292,7 @@ func (c *HTTPClient) SetGroupAnonymousBan(
 	req *entity.SetGroupAnonymousBanRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SetGroupAnonymousBanResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "set_group_anonymous_ban", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -315,7 +315,7 @@ func (c *HTTPClient) SetGroupWholeBan(
 	req *entity.SetGroupWholeBanRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SetGroupWholeBanResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "set_group_whole_ban", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -338,7 +338,7 @@ func (c *HTTPClient) SetGroupAdmin(
 	req *entity.SetGroupAdminRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SetGroupAdminResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "set_group_admin", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +361,7 @@ func (c *HTTPClient) SetGroupAnonymous(
 	req *entity.SetGroupAnonymousRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SetGroupAnonymousResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "set_group_anonymous", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -384,7 +384,7 @@ func (c *HTTPClient) SetGroupCard(
 	req *entity.SetGroupCardRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SetGroupCardResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "set_group_card", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +407,7 @@ func (c *HTTPClient) SetGroupName(
 	req *entity.SetGroupNameRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SetGroupNameResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "set_group_name", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +430,7 @@ func (c *HTTPClient) SetGroupLeave(
 	req *entity.SetGroupLeaveRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SetGroupLeaveResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "set_group_leave", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -453,7 +453,7 @@ func (c *HTTPClient) SetGroupSpecialTitle(
 	req *entity.SetGroupSpecialTitleRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SetGroupSpecialTitleResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "set_group_special_title", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -476,7 +476,7 @@ func (c *HTTPClient) SetGroupAddRequest(
 	req *entity.SetGroupAddRequestRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SetGroupAddRequestResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "set_group_add_request", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -499,7 +499,7 @@ func (c *HTTPClient) GetGroupInfo(
 	req *entity.GetGroupInfoRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetGroupInfoResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_group_info", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -522,7 +522,7 @@ func (c *HTTPClient) GetGroupList(
 	req *entity.GetGroupListRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetGroupListResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_group_list", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -545,7 +545,7 @@ func (c *HTTPClient) GetGroupMemberInfo(
 	req *entity.GetGroupMemberInfoRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetGroupMemberInfoResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_group_member_info", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -568,7 +568,7 @@ func (c *HTTPClient) GetGroupMemberList(
 	req *entity.GetGroupMemberListRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetGroupMemberListResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_group_member_list", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -591,7 +591,7 @@ func (c *HTTPClient) GetGroupHonorInfo(
 	req *entity.GetGroupHonorInfoRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetGroupHonorInfoResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_group_honor_info", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -614,7 +614,7 @@ func (c *HTTPClient) GetLoginInfo(
 	req *entity.GetLoginInfoRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetLoginInfoResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_login_info", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -637,7 +637,7 @@ func (c *HTTPClient) GetCookies(
 	req *entity.GetCookiesRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetCookiesResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_cookies", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -660,7 +660,7 @@ func (c *HTTPClient) GetCsrfToken(
 	req *entity.GetCsrfTokenRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetCsrfTokenResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_csrf_token", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -683,7 +683,7 @@ func (c *HTTPClient) GetCredentials(
 	req *entity.GetCredentialsRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetCredentialsResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_credentials", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -706,7 +706,7 @@ func (c *HTTPClient) GetRecord(
 	req *entity.GetRecordRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetRecordResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_record", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -729,7 +729,7 @@ func (c *HTTPClient) GetImage(
 	req *entity.GetImageRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetImageResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_image", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -752,7 +752,7 @@ func (c *HTTPClient) CanSendImage(
 	req *entity.CanSendImageRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.CanSendImageResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "can_send_image", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -775,7 +775,7 @@ func (c *HTTPClient) CanSendRecord(
 	req *entity.CanSendRecordRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.CanSendRecordResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "can_send_record", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -798,7 +798,7 @@ func (c *HTTPClient) GetStatus(
 	req *entity.GetStatusRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetStatusResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_status", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -821,7 +821,7 @@ func (c *HTTPClient) GetVersionInfo(
 	req *entity.GetVersionInfoRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.GetVersionInfoResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "get_version_info", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -844,7 +844,7 @@ func (c *HTTPClient) SetRestart(
 	req *entity.SetRestartRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.SetRestartResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "set_restart", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -867,7 +867,7 @@ func (c *HTTPClient) CleanCache(
 	req *entity.CleanCacheRequest,
 	opts ...CallOption,
 ) (*entity.ActionResponse[entity.CleanCacheResponse], error) {
-	rawResponse, err := c.do(ctx, "", "", req, opts...)
+	rawResponse, err := c.do(ctx, "clean_cache", "POST", req, opts...)
 	if err != nil {
 		return nil, err
 	}
