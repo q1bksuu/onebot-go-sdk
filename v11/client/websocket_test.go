@@ -50,12 +50,10 @@ func TestWebSocketClient_HandleActionMessage(t *testing.T) {
 		req := `{"action":"test","params":{"foo":"bar"},"echo":"123"}`
 		resp := client.handleActionMessage(ctx, []byte(req))
 
-		env, ok := resp.(*entity.ActionResponseEnvelope)
-		require.True(t, ok)
-		require.Equal(t, entity.StatusOK, env.Status)
-		require.Equal(t, entity.ActionResponseRetcode(0), env.Retcode)
-		require.JSONEq(t, `{"result":"ok"}`, string(env.Data))
-		require.JSONEq(t, `"123"`, string(env.Echo))
+		require.Equal(t, entity.StatusOK, resp.Status)
+		require.Equal(t, entity.ActionResponseRetcode(0), resp.Retcode)
+		require.JSONEq(t, `{"result":"ok"}`, string(resp.Data))
+		require.JSONEq(t, `"123"`, string(resp.Echo))
 	})
 
 	t.Run("invalid json", func(t *testing.T) {
@@ -64,9 +62,7 @@ func TestWebSocketClient_HandleActionMessage(t *testing.T) {
 		req := `{"action":`
 		resp := client.handleActionMessage(ctx, []byte(req))
 
-		env, ok := resp.(*entity.ActionResponseEnvelope)
-		require.True(t, ok)
-		require.Equal(t, entity.StatusFailed, env.Status)
-		require.Equal(t, entity.ActionResponseRetcode(1400), env.Retcode)
+		require.Equal(t, entity.StatusFailed, resp.Status)
+		require.Equal(t, entity.ActionResponseRetcode(1400), resp.Retcode)
 	})
 }

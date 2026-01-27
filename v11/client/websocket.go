@@ -2,8 +2,6 @@ package client
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -13,6 +11,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/q1bksuu/onebot-go-sdk/v11/dispatcher"
 	"github.com/q1bksuu/onebot-go-sdk/v11/entity"
+	wsinternal "github.com/q1bksuu/onebot-go-sdk/v11/internal/ws"
 	"github.com/q1bksuu/onebot-go-sdk/v11/server"
 )
 
@@ -62,7 +61,6 @@ func NewWebSocketClient(cfg WSClientConfig, opts ...WSClientOption) *WebSocketCl
 
 // Start 启动客户端，建立连接并开始处理消息.
 func (c *WebSocketClient) Start(ctx context.Context) error {
-	// 合并外部 context 和内部 context
 	mergedCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -71,19 +69,15 @@ func (c *WebSocketClient) Start(ctx context.Context) error {
 		c.cancel()
 	}()
 
-	url := c.getURL()
-	if url == "" {
+	if c.cfg.URL == "" {
 		return server.ErrUniversalClientURLEmpty
 	}
 
 	c.wg.Add(1)
 
-	go c.run(mergedCtx, url)
+	go c.run(mergedCtx, c.cfg.URL)
 
-	// 等待 context 取消
 	<-mergedCtx.Done()
-
-	// 等待所有 goroutine 完成
 	c.wg.Wait()
 
 	return nil
@@ -93,21 +87,14 @@ func (c *WebSocketClient) Start(ctx context.Context) error {
 func (c *WebSocketClient) Shutdown(ctx context.Context) error {
 	c.cancel()
 
-	// 关闭所有连接
 	c.mu.Lock()
-
-	conns := []*websocket.Conn{}
-	if c.conn != nil {
-		conns = append(conns, c.conn)
-	}
-
+	conn := c.conn
 	c.mu.Unlock()
 
-	for _, conn := range conns {
+	if conn != nil {
 		_ = conn.Close()
 	}
 
-	// 等待所有 goroutine 完成
 	done := make(chan struct{})
 
 	go func() {
@@ -146,12 +133,6 @@ func (c *WebSocketClient) BroadcastEvent(event entity.Event) error {
 	return lastErr
 }
 
-// getURL 获取 Universal 客户端 URL.
-func (c *WebSocketClient) getURL() string {
-	return c.cfg.URL
-}
-
-// buildHeaders 构建连接请求头.
 func (c *WebSocketClient) buildHeaders(clientRole string) http.Header {
 	headers := make(http.Header)
 	headers.Set("X-Self-Id", strconv.FormatInt(c.cfg.SelfID, 10))
@@ -178,10 +159,8 @@ func (c *WebSocketClient) dialWithReconnect(
 	}
 
 	for {
-		select {
-		case <-ctx.Done():
+		if ctx.Err() != nil {
 			return nil, fmt.Errorf("dial context canceled: %w", ctx.Err())
-		default:
 		}
 
 		conn, resp, err := dialer.Dial(url, headers)
@@ -204,13 +183,7 @@ func (c *WebSocketClient) dialWithReconnect(
 func (c *WebSocketClient) run(ctx context.Context, url string) {
 	defer c.wg.Done()
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
-
+	for ctx.Err() == nil {
 		headers := c.buildHeaders("Universal")
 
 		conn, err := c.dialWithReconnect(ctx, url, headers)
@@ -222,7 +195,6 @@ func (c *WebSocketClient) run(ctx context.Context, url string) {
 		c.conn = conn
 		c.mu.Unlock()
 
-		// 在独立 goroutine 中处理 API 请求
 		apiCtx, apiCancel := context.WithCancel(ctx)
 		apiDone := make(chan struct{})
 
@@ -232,84 +204,51 @@ func (c *WebSocketClient) run(ctx context.Context, url string) {
 			c.serveActionConn(apiCtx, conn)
 		}()
 
-		// 等待连接关闭或 context 取消
 		select {
 		case <-ctx.Done():
 			apiCancel()
 			<-apiDone
-			c.mu.Lock()
 
-			if c.conn == conn {
-				c.conn = nil
-			}
-
-			c.mu.Unlock()
-
+			c.clearConn(conn)
 			_ = conn.Close()
 
 			return
 		case <-apiDone:
-			// 连接断开，准备重连
 			apiCancel()
 		}
 
-		c.mu.Lock()
-
-		if c.conn == conn {
-			c.conn = nil
-		}
-
-		c.mu.Unlock()
-
+		c.clearConn(conn)
 		_ = conn.Close()
 	}
 }
 
-// serveActionConn 处理 API 连接的消息.
 func (c *WebSocketClient) serveActionConn(ctx context.Context, conn *websocket.Conn) {
 	if c.actionHandler == nil {
-		c.serveActionConnWithoutHandler(ctx, conn)
+		<-ctx.Done()
 
 		return
 	}
 
-	c.serveActionConnWithHandler(ctx, conn)
-}
-
-// serveActionConnWithoutHandler 处理没有 handler 的情况，只读取消息但不处理.
-func (c *WebSocketClient) serveActionConnWithoutHandler(ctx context.Context, conn *websocket.Conn) {
-	for {
-		if ctx.Err() != nil {
-			return
+	for ctx.Err() == nil {
+		if c.cfg.ReadTimeout > 0 {
+			err := conn.SetReadDeadline(time.Now().Add(c.cfg.ReadTimeout))
+			if err != nil {
+				return
+			}
 		}
 
-		_, _, err := conn.ReadMessage()
-		if err != nil {
-			return
-		}
-	}
-}
-
-// serveActionConnWithHandler 处理有 handler 的情况.
-func (c *WebSocketClient) serveActionConnWithHandler(ctx context.Context, conn *websocket.Conn) {
-	for {
-		if ctx.Err() != nil {
-			return
-		}
-
-		if !c.setReadDeadline(conn) {
-			return
-		}
-
-		data, err := c.readMessage(conn)
+		_, data, err := conn.ReadMessage()
 		if err != nil {
 			return
 		}
 
 		resp := c.handleActionMessage(ctx, data)
 
-		if !c.setWriteDeadline(conn) {
-			return
+		if c.cfg.WriteTimeout > 0 {
+			err := conn.SetWriteDeadline(time.Now().Add(c.cfg.WriteTimeout))
+			if err != nil {
+				return
+			}
 		}
 
 		err = conn.WriteJSON(resp)
@@ -319,96 +258,16 @@ func (c *WebSocketClient) serveActionConnWithHandler(ctx context.Context, conn *
 	}
 }
 
-// setReadDeadline 设置读取超时.
-func (c *WebSocketClient) setReadDeadline(conn *websocket.Conn) bool {
-	if c.cfg.ReadTimeout > 0 {
-		err := conn.SetReadDeadline(time.Now().Add(c.cfg.ReadTimeout))
-		if err != nil {
-			return false
-		}
-	}
-
-	return true
+func (c *WebSocketClient) handleActionMessage(ctx context.Context, data []byte) *entity.ActionResponseEnvelope {
+	return wsinternal.HandleActionMessage(ctx, data, c.actionHandler, server.ErrBadRequest)
 }
 
-// setWriteDeadline 设置写入超时.
-func (c *WebSocketClient) setWriteDeadline(conn *websocket.Conn) bool {
-	if c.cfg.WriteTimeout > 0 {
-		err := conn.SetWriteDeadline(time.Now().Add(c.cfg.WriteTimeout))
-		if err != nil {
-			return false
-		}
+func (c *WebSocketClient) clearConn(conn *websocket.Conn) {
+	c.mu.Lock()
+
+	if c.conn == conn {
+		c.conn = nil
 	}
 
-	return true
-}
-
-// readMessage 读取消息.
-func (c *WebSocketClient) readMessage(conn *websocket.Conn) ([]byte, error) {
-	_, data, err := conn.ReadMessage()
-	if err != nil {
-		return nil, fmt.Errorf("read message failed: %w", err)
-	}
-
-	return data, nil
-}
-
-// handleActionMessage 处理动作请求消息.
-func (c *WebSocketClient) handleActionMessage(ctx context.Context, data []byte) any {
-	var reqEnv entity.ActionRequestEnvelope
-
-	err := json.Unmarshal(data, &reqEnv)
-	if err != nil {
-		return &entity.ActionResponseEnvelope{
-			ActionRawResponse: entity.ActionRawResponse{
-				Status:  entity.StatusFailed,
-				Retcode: 1400,
-				Message: "invalid json",
-			},
-		}
-	}
-
-	req := &entity.ActionRequest{Action: reqEnv.Action, Params: reqEnv.Params}
-
-	resp, err := c.actionHandler.HandleActionRequest(ctx, req)
-	if err != nil {
-		mapped := mapHandlerError(err)
-
-		return &entity.ActionResponseEnvelope{
-			ActionRawResponse: *mapped,
-			Echo:              reqEnv.Echo,
-		}
-	}
-
-	if resp == nil {
-		resp = &entity.ActionRawResponse{Status: entity.StatusFailed, Retcode: -1, Message: "empty response"}
-	}
-
-	return &entity.ActionResponseEnvelope{
-		ActionRawResponse: *resp,
-		Echo:              reqEnv.Echo,
-	}
-}
-
-func mapHandlerError(err error) *entity.ActionRawResponse {
-	switch {
-	case errors.Is(err, dispatcher.ErrActionNotFound):
-		return &entity.ActionRawResponse{
-			Status:  entity.StatusFailed,
-			Retcode: 1404,
-			Message: err.Error(),
-		}
-	case errors.Is(err, server.ErrBadRequest):
-		return &entity.ActionRawResponse{
-			Status:  entity.StatusFailed,
-			Retcode: 1400,
-			Message: err.Error(),
-		}
-	default:
-		return &entity.ActionRawResponse{
-			Status:  entity.StatusFailed,
-			Retcode: 1500,
-			Message: err.Error(),
-		}
-	}
+	c.mu.Unlock()
 }
