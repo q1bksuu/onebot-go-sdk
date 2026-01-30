@@ -25,13 +25,10 @@ func newTestUnifiedServer(
 ) *httptest.Server {
 	t.Helper()
 
-	// 确保 HTTP handler 作为一个 Option 传入
-	var httpOpts []HTTPServerOption
-	if httpHandler != nil {
-		httpOpts = append(httpOpts, WithActionHandler(httpHandler))
-	}
+	cfg.HTTP.ActionHandler = httpHandler
+	cfg.WS.ActionHandler = wsHandler
 
-	unifiedServer := NewUnifiedServer(cfg, httpOpts, wsHandler)
+	unifiedServer := NewUnifiedServer(cfg)
 	testServer := httptest.NewServer(unifiedServer.Srv.Handler)
 
 	return testServer
@@ -41,16 +38,18 @@ func TestUnifiedServer_Initialization(t *testing.T) {
 	t.Parallel()
 
 	cfg := UnifiedConfig{
-		Addr: ":1234",
-		HTTP: HTTPConfig{
+		ServerConfig: ServerConfig{
+			Addr: ":1234",
+		},
+		HTTP: UnifiedHTTPConfig{
 			APIPathPrefix: "/api",
 		},
-		WS: WSConfig{
+		WS: UnifiedWSConfig{
 			PathPrefix: "/ws",
 		},
 	}
 
-	server := NewUnifiedServer(cfg, nil, nil)
+	server := NewUnifiedServer(cfg)
 
 	// 验证配置覆盖
 	assert.Equal(t, cfg.Addr, server.httpSrv.cfg.Addr)
@@ -66,7 +65,7 @@ func TestUnifiedServer_Routing_HTTP(t *testing.T) {
 	t.Parallel()
 
 	cfg := UnifiedConfig{
-		HTTP: HTTPConfig{
+		HTTP: UnifiedHTTPConfig{
 			APIPathPrefix: "/api",
 		},
 	}
@@ -107,7 +106,7 @@ func TestUnifiedServer_Routing_WebSocket(t *testing.T) {
 	t.Parallel()
 
 	cfg := UnifiedConfig{
-		WS: WSConfig{
+		WS: UnifiedWSConfig{
 			PathPrefix: "/ws",
 		},
 	}
@@ -163,10 +162,10 @@ func TestUnifiedServer_Routing_UniversalPath_DistinguishByProtocol(t *testing.T)
 
 	// HTTP 和 WS 都使用根路径 /
 	cfg := UnifiedConfig{
-		HTTP: HTTPConfig{
+		HTTP: UnifiedHTTPConfig{
 			APIPathPrefix: "/",
 		},
-		WS: WSConfig{
+		WS: UnifiedWSConfig{
 			PathPrefix: "/",
 		},
 	}
@@ -226,9 +225,11 @@ func TestUnifiedServer_StartAndShutdown(t *testing.T) {
 
 	// 使用随机端口
 	cfg := UnifiedConfig{
-		Addr: "127.0.0.1:0",
+		ServerConfig: ServerConfig{
+			Addr: "127.0.0.1:0",
+		},
 	}
-	server := NewUnifiedServer(cfg, nil, nil)
+	server := NewUnifiedServer(cfg)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
