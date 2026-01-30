@@ -35,7 +35,10 @@ func newTestWebSocketServer(
 ) (*WebSocketServer, *httptest.Server) {
 	t.Helper()
 
-	wsServer := NewWebSocketServer(cfg, handler)
+	wsServer := NewWebSocketServer(
+		WithWSConfig(cfg),
+		WithWSActionHandler(handler),
+	)
 	testServer := httptest.NewServer(wsServer.Srv.Handler)
 
 	return wsServer, testServer

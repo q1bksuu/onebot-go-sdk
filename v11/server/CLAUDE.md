@@ -61,24 +61,25 @@ eventHandler := server.EventRequestHandlerFunc(func(ctx context.Context, event e
 
 // 3. 配置统一服务器
 cfg := server.UnifiedConfig{
-    Addr: ":5700",
-    HTTP: server.HTTPConfig{
+    ServerConfig: server.ServerConfig{
+        Addr: ":5700",
+    },
+    HTTP: server.UnifiedHTTPConfig{
         APIPathPrefix: "/",
         EventPath:     "/event",
         AccessToken:   "your-secret",
+        ActionHandler: actionDispatcher,
+        EventHandler:  eventHandler,
     },
-    WS: server.WSConfig{
+    WS: server.UnifiedWSConfig{
         PathPrefix:  "/",
         AccessToken: "your-secret",
+        ActionHandler: actionDispatcher,
     },
 }
 
 // 4. 创建并启动
-httpOpts := []server.HTTPServerOption{
-    server.WithActionHandler(actionDispatcher),
-    server.WithEventHandler(eventHandler),
-}
-srv := server.NewUnifiedServer(cfg, httpOpts, actionDispatcher)
+srv := server.NewUnifiedServer(cfg)
 
 ctx := context.Background()
 if err := srv.Start(ctx); err != nil {
@@ -96,7 +97,8 @@ cfg := server.HTTPConfig{
     AccessToken:   "your-secret",
 }
 
-httpSrv := server.NewHTTPServer(cfg,
+httpSrv := server.NewHTTPServer(
+    server.WithHTTPConfig(cfg),
     server.WithActionHandler(actionDispatcher),
     server.WithEventHandler(eventHandler),
 )
@@ -115,7 +117,10 @@ cfg := server.WSConfig{
     AccessToken: "your-secret",
 }
 
-wsSrv := server.NewWebSocketServer(cfg, actionDispatcher)
+wsSrv := server.NewWebSocketServer(
+    server.WithWSConfig(cfg),
+    server.WithWSActionHandler(actionDispatcher),
+)
 
 if err := wsSrv.Start(context.Background()); err != nil {
     log.Fatal(err)
@@ -135,8 +140,6 @@ if err := wsSrv.Start(context.Background()); err != nil {
 ```go
 func NewUnifiedServer(
     cfg UnifiedConfig,
-    httpOpts []HTTPServerOption,
-    wsHandler dispatcher.ActionRequestHandler,
 ) *UnifiedServer
 ```
 
@@ -144,16 +147,25 @@ func NewUnifiedServer(
 
 ```go
 type UnifiedConfig struct {
-    Addr string // 统一监听地址
+    ServerConfig
 
-    HTTP HTTPConfig // HTTP 配置 (Addr 字段将被忽略)
-    WS   WSConfig   // WebSocket 配置 (Addr 字段将被忽略)
+    HTTP UnifiedHTTPConfig
+    WS   UnifiedWSConfig
+}
 
-    // 通用超时配置
-    ReadHeaderTimeout time.Duration
-    ReadTimeout       time.Duration
-    WriteTimeout      time.Duration
-    IdleTimeout       time.Duration
+type UnifiedHTTPConfig struct {
+    APIPathPrefix string
+    EventPath     string
+    AccessToken   string
+    ActionHandler dispatcher.ActionRequestHandler
+    EventHandler  EventRequestHandler
+}
+
+type UnifiedWSConfig struct {
+    PathPrefix   string
+    AccessToken  string
+    CheckOrigin  func(r *http.Request) bool
+    ActionHandler dispatcher.ActionRequestHandler
 }
 ```
 
@@ -164,14 +176,23 @@ type UnifiedConfig struct {
 
 ### 2. HTTPServer (http_server.go)
 
-**NewHTTPServer** (http_server.go:66-101)
+**NewHTTPServer** (http_server.go)
 
 ```go
-func NewHTTPServer(cfg HTTPConfig, opts ...HTTPServerOption) *HTTPServer
+func NewHTTPServer(opts ...HTTPServerOption) *HTTPServer
 ```
 
 **HTTPServerOption 选项**:
 
+- `WithHTTPConfig(cfg HTTPConfig)`: 设置 HTTP 配置（覆盖）
+- `WithAddr(addr string)`: 设置监听地址
+- `WithAPIPathPrefix(prefix string)`: 设置 API 路由前缀
+- `WithEventPath(path string)`: 设置事件路由
+- `WithReadHeaderTimeout(timeout time.Duration)`: 设置 ReadHeaderTimeout
+- `WithReadTimeout(timeout time.Duration)`: 设置 ReadTimeout
+- `WithWriteTimeout(timeout time.Duration)`: 设置 WriteTimeout
+- `WithIdleTimeout(timeout time.Duration)`: 设置 IdleTimeout
+- `WithAccessToken(token string)`: 设置访问令牌
 - `WithActionHandler(h dispatcher.ActionRequestHandler)`: 设置动作处理器
 - `WithEventHandler(h EventRequestHandler)`: 设置事件处理器
 
@@ -197,11 +218,23 @@ type HTTPConfig struct {
 
 ### 3. WebSocketServer (websocket.go)
 
-**NewWebSocketServer** (websocket.go:61-99)
+**NewWebSocketServer** (websocket.go)
 
 ```go
-func NewWebSocketServer(cfg WSConfig, handler dispatcher.ActionRequestHandler) *WebSocketServer
+func NewWebSocketServer(opts ...WebSocketServerOption) *WebSocketServer
 ```
+
+**WebSocketServerOption 选项**:
+
+- `WithWSConfig(cfg WSConfig)`: 设置 WebSocket 配置（覆盖）
+- `WithWSAddr(addr string)`: 设置监听地址
+- `WithWSPathPrefix(prefix string)`: 设置路径前缀
+- `WithWSAccessToken(token string)`: 设置访问令牌
+- `WithWSCheckOrigin(fn func(*http.Request) bool)`: 设置跨域检查函数
+- `WithWSReadTimeout(timeout time.Duration)`: 设置 ReadTimeout
+- `WithWSWriteTimeout(timeout time.Duration)`: 设置 WriteTimeout
+- `WithWSIdleTimeout(timeout time.Duration)`: 设置 IdleTimeout
+- `WithWSActionHandler(h dispatcher.ActionRequestHandler)`: 设置动作处理器
 
 **WSConfig 配置**:
 
@@ -567,7 +600,7 @@ ed.Register("message.private", handlePrivateMessage)
 ed.Register("message", handleAllMessage)
 
 // 作为 EventRequestHandler 使用
-httpSrv := server.NewHTTPServer(cfg, server.WithEventHandler(ed))
+httpSrv := server.NewHTTPServer(server.WithHTTPConfig(cfg), server.WithEventHandler(ed))
 ```
 
 **Q: 如何集成到现有 HTTP 服务器？**
