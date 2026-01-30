@@ -58,22 +58,93 @@ type WebSocketServer struct {
 	universalConn map[*wsConn]struct{}
 }
 
-// NewWebSocketServer 创建 WebSocketServer. 若传入 CheckOrigin 为 nil，则允许任意来源.
-func NewWebSocketServer(cfg WSConfig, handler dispatcher.ActionRequestHandler) *WebSocketServer {
-	prefix := util.NormalizePath(cfg.PathPrefix)
+// WebSocketServerOption 用于配置 WebSocketServer 的选项函数类型.
+type WebSocketServerOption func(*WebSocketServer)
 
-	upgrader := websocket.Upgrader{CheckOrigin: cfg.CheckOrigin}
+// WithWSConfig 设置 WebSocket 服务配置（会覆盖之前的配置）.
+func WithWSConfig(cfg WSConfig) WebSocketServerOption {
+	return func(s *WebSocketServer) {
+		s.cfg = cfg
+	}
+}
+
+// WithWSAddr 设置监听地址.
+func WithWSAddr(addr string) WebSocketServerOption {
+	return func(s *WebSocketServer) {
+		s.cfg.Addr = addr
+	}
+}
+
+// WithWSPathPrefix 设置路径前缀.
+func WithWSPathPrefix(prefix string) WebSocketServerOption {
+	return func(s *WebSocketServer) {
+		s.cfg.PathPrefix = prefix
+	}
+}
+
+// WithWSAccessToken 设置访问令牌.
+func WithWSAccessToken(token string) WebSocketServerOption {
+	return func(s *WebSocketServer) {
+		s.cfg.AccessToken = token
+	}
+}
+
+// WithWSCheckOrigin 设置跨域检查函数.
+func WithWSCheckOrigin(checkOrigin func(r *http.Request) bool) WebSocketServerOption {
+	return func(s *WebSocketServer) {
+		s.cfg.CheckOrigin = checkOrigin
+	}
+}
+
+// WithWSReadTimeout 设置 ReadTimeout.
+func WithWSReadTimeout(timeout time.Duration) WebSocketServerOption {
+	return func(s *WebSocketServer) {
+		s.cfg.ReadTimeout = timeout
+	}
+}
+
+// WithWSWriteTimeout 设置 WriteTimeout.
+func WithWSWriteTimeout(timeout time.Duration) WebSocketServerOption {
+	return func(s *WebSocketServer) {
+		s.cfg.WriteTimeout = timeout
+	}
+}
+
+// WithWSIdleTimeout 设置 IdleTimeout.
+func WithWSIdleTimeout(timeout time.Duration) WebSocketServerOption {
+	return func(s *WebSocketServer) {
+		s.cfg.IdleTimeout = timeout
+	}
+}
+
+// WithWSActionHandler 设置动作请求处理器选项.
+func WithWSActionHandler(handler dispatcher.ActionRequestHandler) WebSocketServerOption {
+	return func(s *WebSocketServer) {
+		s.handler = handler
+	}
+}
+
+// NewWebSocketServer 创建 WebSocketServer，配置由 opts 提供. 若传入 CheckOrigin 为 nil，则允许任意来源.
+func NewWebSocketServer(opts ...WebSocketServerOption) *WebSocketServer {
+	server := &WebSocketServer{
+		cfg:           WSConfig{},
+		eventConns:    make(map[*wsConn]struct{}),
+		universalConn: make(map[*wsConn]struct{}),
+	}
+
+	// 应用选项（顺序生效，后者覆盖前者）
+	for _, opt := range opts {
+		opt(server)
+	}
+
+	upgrader := websocket.Upgrader{CheckOrigin: server.cfg.CheckOrigin}
 	if upgrader.CheckOrigin == nil {
 		upgrader.CheckOrigin = func(*http.Request) bool { return true }
 	}
 
-	server := &WebSocketServer{
-		cfg:           cfg,
-		handler:       handler,
-		upgrader:      upgrader,
-		eventConns:    make(map[*wsConn]struct{}),
-		universalConn: make(map[*wsConn]struct{}),
-	}
+	server.upgrader = upgrader
+
+	prefix := util.NormalizePath(server.cfg.PathPrefix)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc(prefix+"/api", server.handleAPI)
@@ -89,10 +160,10 @@ func NewWebSocketServer(cfg WSConfig, handler dispatcher.ActionRequestHandler) *
 	mux.HandleFunc(universalPath, server.handleUniversal)
 
 	baseCfg := ServerConfig{
-		Addr:         cfg.Addr,
-		ReadTimeout:  cfg.ReadTimeout,
-		WriteTimeout: cfg.WriteTimeout,
-		IdleTimeout:  cfg.IdleTimeout,
+		Addr:         server.cfg.Addr,
+		ReadTimeout:  server.cfg.ReadTimeout,
+		WriteTimeout: server.cfg.WriteTimeout,
+		IdleTimeout:  server.cfg.IdleTimeout,
 	}
 	server.BaseServer = NewBaseServer(baseCfg, mux)
 

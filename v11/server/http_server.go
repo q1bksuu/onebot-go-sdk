@@ -49,6 +49,69 @@ type HTTPServer struct {
 // HTTPServerOption 用于配置 HTTPServer 的选项函数类型.
 type HTTPServerOption func(*HTTPServer)
 
+// WithHTTPConfig 设置 HTTP 服务配置（会覆盖之前的配置）.
+func WithHTTPConfig(cfg HTTPConfig) HTTPServerOption {
+	return func(s *HTTPServer) {
+		s.cfg = cfg
+	}
+}
+
+// WithAddr 设置监听地址.
+func WithAddr(addr string) HTTPServerOption {
+	return func(s *HTTPServer) {
+		s.cfg.Addr = addr
+	}
+}
+
+// WithAPIPathPrefix 设置 API 路由前缀.
+func WithAPIPathPrefix(prefix string) HTTPServerOption {
+	return func(s *HTTPServer) {
+		s.cfg.APIPathPrefix = prefix
+	}
+}
+
+// WithEventPath 设置事件路由.
+func WithEventPath(path string) HTTPServerOption {
+	return func(s *HTTPServer) {
+		s.cfg.EventPath = path
+	}
+}
+
+// WithReadHeaderTimeout 设置 ReadHeaderTimeout.
+func WithReadHeaderTimeout(timeout time.Duration) HTTPServerOption {
+	return func(s *HTTPServer) {
+		s.cfg.ReadHeaderTimeout = timeout
+	}
+}
+
+// WithReadTimeout 设置 ReadTimeout.
+func WithReadTimeout(timeout time.Duration) HTTPServerOption {
+	return func(s *HTTPServer) {
+		s.cfg.ReadTimeout = timeout
+	}
+}
+
+// WithWriteTimeout 设置 WriteTimeout.
+func WithWriteTimeout(timeout time.Duration) HTTPServerOption {
+	return func(s *HTTPServer) {
+		s.cfg.WriteTimeout = timeout
+	}
+}
+
+// WithIdleTimeout 设置 IdleTimeout.
+func WithIdleTimeout(timeout time.Duration) HTTPServerOption {
+	return func(s *HTTPServer) {
+		s.cfg.IdleTimeout = timeout
+	}
+}
+
+// WithAccessToken 设置访问令牌.
+func WithAccessToken(token string) HTTPServerOption {
+	return func(s *HTTPServer) {
+		s.cfg.AccessToken = token
+	}
+}
+
 // WithActionHandler 设置动作请求处理器选项.
 func WithActionHandler(actionHandler dispatcher.ActionRequestHandler) HTTPServerOption {
 	return func(s *HTTPServer) {
@@ -63,38 +126,38 @@ func WithEventHandler(eventHandler EventRequestHandler) HTTPServerOption {
 	}
 }
 
-// NewHTTPServer 创建 HTTPServer.若传入 mux 为 nil，则使用自建 ServeMux.
-func NewHTTPServer(cfg HTTPConfig, opts ...HTTPServerOption) *HTTPServer {
+// NewHTTPServer 创建 HTTPServer，配置由 opts 提供.
+func NewHTTPServer(opts ...HTTPServerOption) *HTTPServer {
 	mux := http.NewServeMux()
 
-	trimmedPrefix := strings.Trim(cfg.APIPathPrefix, "/")
-	if trimmedPrefix == "" {
-		cfg.APIPathPrefix = "/"
-	} else {
-		cfg.APIPathPrefix = "/" + trimmedPrefix + "/"
-	}
+	server := &HTTPServer{cfg: HTTPConfig{}, mux: mux}
 
-	server := &HTTPServer{cfg: cfg, mux: mux}
-
-	// 应用选项
+	// 应用选项（顺序生效，后者覆盖前者）
 	for _, opt := range opts {
 		opt(server)
+	}
+
+	trimmedPrefix := strings.Trim(server.cfg.APIPathPrefix, "/")
+	if trimmedPrefix == "" {
+		server.cfg.APIPathPrefix = "/"
+	} else {
+		server.cfg.APIPathPrefix = "/" + trimmedPrefix + "/"
 	}
 
 	mux.HandleFunc("/", server.handleRoot)
 
 	// 如果配置了 EventPath，注册事件路由
-	if cfg.EventPath != "" {
-		eventPath := util.NormalizePath(cfg.EventPath)
+	if server.cfg.EventPath != "" {
+		eventPath := util.NormalizePath(server.cfg.EventPath)
 		mux.HandleFunc(eventPath, server.handleEvent)
 	}
 
 	baseCfg := ServerConfig{
-		Addr:              cfg.Addr,
-		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
-		ReadTimeout:       cfg.ReadTimeout,
-		WriteTimeout:      cfg.WriteTimeout,
-		IdleTimeout:       cfg.IdleTimeout,
+		Addr:              server.cfg.Addr,
+		ReadHeaderTimeout: server.cfg.ReadHeaderTimeout,
+		ReadTimeout:       server.cfg.ReadTimeout,
+		WriteTimeout:      server.cfg.WriteTimeout,
+		IdleTimeout:       server.cfg.IdleTimeout,
 	}
 	server.BaseServer = NewBaseServer(baseCfg, mux)
 
