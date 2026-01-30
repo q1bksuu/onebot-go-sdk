@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/q1bksuu/onebot-go-sdk/v11/dispatcher"
 )
@@ -19,33 +18,62 @@ type UnifiedServer struct {
 
 // UnifiedConfig 统一服务器配置.
 type UnifiedConfig struct {
-	Addr string // 统一监听地址
+	ServerConfig // Addr 与超时配置
 
-	// HTTP 配置 (Addr 字段将被忽略)
-	HTTP HTTPConfig
-	// WebSocket 配置 (Addr 字段将被忽略)
-	WS WSConfig
+	// HTTP/WebSocket 各自独有配置
+	HTTP UnifiedHTTPConfig
+	WS   UnifiedWSConfig
+}
 
-	// Server 通用配置
-	ReadHeaderTimeout time.Duration
-	ReadTimeout       time.Duration
-	WriteTimeout      time.Duration
-	IdleTimeout       time.Duration
+// UnifiedHTTPConfig 统一服务器中的 HTTP 配置（仅包含独有字段）.
+type UnifiedHTTPConfig struct {
+	APIPathPrefix string
+	EventPath     string
+	AccessToken   string
+	ActionHandler dispatcher.ActionRequestHandler
+	EventHandler  EventRequestHandler
+}
+
+// UnifiedWSConfig 统一服务器中的 WebSocket 配置（仅包含独有字段）.
+type UnifiedWSConfig struct {
+	PathPrefix    string
+	AccessToken   string
+	CheckOrigin   func(r *http.Request) bool
+	ActionHandler dispatcher.ActionRequestHandler
 }
 
 // NewUnifiedServer 创建统一服务器.
-func NewUnifiedServer(
-	cfg UnifiedConfig,
-	httpOpts []HTTPServerOption,
-	wsHandler dispatcher.ActionRequestHandler,
-) *UnifiedServer {
-	// 覆盖子配置的 Addr，虽然不会被底层 Server 用来监听，但为了保持一致性
-	cfg.HTTP.Addr = cfg.Addr
-	cfg.WS.Addr = cfg.Addr
+func NewUnifiedServer(cfg UnifiedConfig) *UnifiedServer {
+	// 将统一配置下发到 HTTP/WS 子配置（Addr/超时来自统一配置）
+	httpCfg := HTTPConfig{
+		Addr:              cfg.Addr,
+		APIPathPrefix:     cfg.HTTP.APIPathPrefix,
+		EventPath:         cfg.HTTP.EventPath,
+		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
+		ReadTimeout:       cfg.ReadTimeout,
+		WriteTimeout:      cfg.WriteTimeout,
+		IdleTimeout:       cfg.IdleTimeout,
+		AccessToken:       cfg.HTTP.AccessToken,
+	}
+	httpSrv := NewHTTPServer(
+		WithHTTPConfig(httpCfg),
+		WithActionHandler(cfg.HTTP.ActionHandler),
+		WithEventHandler(cfg.HTTP.EventHandler),
+	)
 
-	// 创建各个服务器实例
-	httpSrv := NewHTTPServer(cfg.HTTP, httpOpts...)
-	wsSrv := NewWebSocketServer(cfg.WS, wsHandler)
+	wsCfg := WSConfig{
+		Addr:         cfg.Addr,
+		PathPrefix:   cfg.WS.PathPrefix,
+		AccessToken:  cfg.WS.AccessToken,
+		CheckOrigin:  cfg.WS.CheckOrigin,
+		ReadTimeout:  cfg.ReadTimeout,
+		WriteTimeout: cfg.WriteTimeout,
+		IdleTimeout:  cfg.IdleTimeout,
+	}
+	wsSrv := NewWebSocketServer(
+		WithWSConfig(wsCfg),
+		WithWSActionHandler(cfg.WS.ActionHandler),
+	)
 
 	// 使用 combinedHandler 分发请求
 	// 这允许 HTTP 和 WebSocket 共用同一个端口和路径（例如 "/"），
@@ -60,14 +88,7 @@ func NewUnifiedServer(
 		wsSrv:   wsSrv,
 	}
 
-	baseCfg := ServerConfig{
-		Addr:              cfg.Addr,
-		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
-		ReadTimeout:       cfg.ReadTimeout,
-		WriteTimeout:      cfg.WriteTimeout,
-		IdleTimeout:       cfg.IdleTimeout,
-	}
-	server.BaseServer = NewBaseServer(baseCfg, mainMux)
+	server.BaseServer = NewBaseServer(cfg.ServerConfig, mainMux)
 
 	return server
 }
