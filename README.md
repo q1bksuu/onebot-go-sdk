@@ -34,12 +34,25 @@ import (
     "fmt"
 
     "github.com/q1bksuu/onebot-go-sdk/v11/client"
+    "github.com/q1bksuu/onebot-go-sdk/v11/entity"
 )
 
 func main() {
-    c := client.NewHTTPClient("http://127.0.0.1:5700", "your-access-token")
+    c, err := client.NewHTTPClient(
+        "http://127.0.0.1:5700",
+        client.WithAccessToken("your-access-token"),
+    )
+    if err != nil {
+        panic(err)
+    }
 
-    resp, err := c.SendPrivateMsg(context.Background(), 123456789, "Hello!")
+    resp, err := c.SendPrivateMsg(context.Background(), &entity.SendPrivateMsgRequest{
+        UserId: 123456789,
+        Message: &entity.MessageValue{
+            Type:        entity.MessageValueTypeString,
+            StringValue: "Hello!",
+        },
+    })
     if err != nil {
         panic(err)
     }
@@ -54,23 +67,31 @@ package main
 
 import (
     "context"
-    "fmt"
+    "time"
 
     "github.com/q1bksuu/onebot-go-sdk/v11/client"
 )
 
 func main() {
-    c, err := client.NewWebSocketClient("ws://127.0.0.1:6700", "your-access-token")
-    if err != nil {
-        panic(err)
-    }
-    defer c.Close()
+    wsClient := client.NewWebSocketClient(
+        client.WithWSURL("ws://127.0.0.1:6700"),
+        client.WithWSAccessToken("your-access-token"),
+        client.WithWSSelfID(123456789),
+    )
 
-    resp, err := c.SendPrivateMsg(context.Background(), 123456789, "Hello via WebSocket!")
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("消息已发送，ID: %d\n", resp.MessageID)
+    ctx, cancel := context.WithCancel(context.Background())
+    go func() {
+        if err := wsClient.Start(ctx); err != nil {
+            panic(err)
+        }
+    }()
+
+    // ... your logic ...
+
+    cancel()
+    shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer shutdownCancel()
+    _ = wsClient.Shutdown(shutdownCtx)
 }
 ```
 

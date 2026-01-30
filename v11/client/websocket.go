@@ -42,12 +42,68 @@ type WebSocketClient struct {
 	wg     sync.WaitGroup
 }
 
-// NewWebSocketClient 创建反向 WebSocket 客户端.
-func NewWebSocketClient(cfg WSClientConfig, opts ...WSClientOption) *WebSocketClient {
+// WithWSConfig 设置 WebSocket 客户端配置（会覆盖之前的配置）.
+func WithWSConfig(cfg WSClientConfig) WSClientOption {
+	return func(c *WebSocketClient) {
+		c.cfg = cfg
+	}
+}
+
+// WithWSURL 设置 WebSocket 连接地址.
+func WithWSURL(url string) WSClientOption {
+	return func(c *WebSocketClient) {
+		c.cfg.URL = url
+	}
+}
+
+// WithWSReconnectInterval 设置断线重连间隔.
+func WithWSReconnectInterval(interval time.Duration) WSClientOption {
+	return func(c *WebSocketClient) {
+		c.cfg.ReconnectInterval = interval
+	}
+}
+
+// WithWSSelfID 设置机器人 SelfID（用于 X-Self-ID 请求头）.
+func WithWSSelfID(selfID int64) WSClientOption {
+	return func(c *WebSocketClient) {
+		c.cfg.SelfID = selfID
+	}
+}
+
+// WithWSAccessToken 设置访问令牌.
+func WithWSAccessToken(token string) WSClientOption {
+	return func(c *WebSocketClient) {
+		c.cfg.AccessToken = token
+	}
+}
+
+// WithWSReadTimeout 设置 ReadTimeout.
+func WithWSReadTimeout(timeout time.Duration) WSClientOption {
+	return func(c *WebSocketClient) {
+		c.cfg.ReadTimeout = timeout
+	}
+}
+
+// WithWSWriteTimeout 设置 WriteTimeout.
+func WithWSWriteTimeout(timeout time.Duration) WSClientOption {
+	return func(c *WebSocketClient) {
+		c.cfg.WriteTimeout = timeout
+	}
+}
+
+// WithWSActionHandler 设置动作请求处理器.
+func WithWSActionHandler(handler dispatcher.ActionRequestHandler) WSClientOption {
+	return func(c *WebSocketClient) {
+		c.actionHandler = handler
+	}
+}
+
+// NewWebSocketClient 创建反向 WebSocket 客户端，配置由 opts 提供.
+func NewWebSocketClient(opts ...WSClientOption) *WebSocketClient {
 	_, cancel := context.WithCancel(context.Background())
 
 	client := &WebSocketClient{
-		cfg:    cfg,
+		cfg:    WSClientConfig{},
 		cancel: cancel,
 	}
 

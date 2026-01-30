@@ -68,16 +68,14 @@ c, err := client.NewHTTPClient("http://localhost:5700",
 import "github.com/q1bksuu/onebot-go-sdk/v11/client"
 
 // 创建 WebSocket 客户端
-cfg := client.WSClientConfig{
-    URL:               "ws://localhost:6700",
-    ReconnectInterval: 5 * time.Second,  // 断线重连间隔
-    SelfID:            123456789,         // 机器人 QQ 号
-    AccessToken:       "your-token",      // 可选鉴权令牌
-    ReadTimeout:       30 * time.Second,  // 可选读取超时
-    WriteTimeout:      30 * time.Second,  // 可选写入超时
-}
-
-wsClient := client.NewWebSocketClient(cfg)
+wsClient := client.NewWebSocketClient(
+    client.WithWSURL("ws://localhost:6700"),
+    client.WithWSReconnectInterval(5*time.Second), // 断线重连间隔
+    client.WithWSSelfID(123456789),                // 机器人 QQ 号
+    client.WithWSAccessToken("your-token"),        // 可选鉴权令牌
+    client.WithWSReadTimeout(30*time.Second),      // 可选读取超时
+    client.WithWSWriteTimeout(30*time.Second),     // 可选写入超时
+)
 
 // 启动客户端（阻塞直到 context 取消）
 ctx, cancel := context.WithCancel(context.Background())
@@ -88,6 +86,7 @@ go func() {
 }()
 
 // 关闭客户端
+cancel()
 shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
 defer shutdownCancel()
 wsClient.Shutdown(shutdownCtx)
@@ -135,13 +134,13 @@ func NewHTTPClient(baseURL string, opts ...Option) (*HTTPClient, error)
 
 ### 2. WebSocketClient 类型
 
-**NewWebSocketClient** (websocket.go:43-57)
+**NewWebSocketClient** (websocket.go)
 
 ```go
-func NewWebSocketClient(cfg WSClientConfig, opts ...WSClientOption) *WebSocketClient
+func NewWebSocketClient(opts ...WSClientOption) *WebSocketClient
 ```
 
-**WSClientConfig 字段**:
+**WSClientConfig 字段**（可通过 `WithWSConfig` 一次性设置）:
 
 | 字段                | 类型            | 说明                     |
 | ------------------- | --------------- | ------------------------ |
@@ -151,6 +150,19 @@ func NewWebSocketClient(cfg WSClientConfig, opts ...WSClientOption) *WebSocketCl
 | `AccessToken`       | `string`        | 可选鉴权令牌             |
 | `ReadTimeout`       | `time.Duration` | 读取超时（默认 0 无限）  |
 | `WriteTimeout`      | `time.Duration` | 写入超时（默认 0 无限）  |
+
+**WSClientOption 选项**（顺序生效，后者覆盖前者）:
+
+| Option                              | 说明                             | 示例                                   |
+| ----------------------------------- | -------------------------------- | -------------------------------------- |
+| `WithWSConfig(cfg WSClientConfig)`  | 批量设置客户端配置               | `WithWSConfig(client.WSClientConfig{...})` |
+| `WithWSURL(url string)`             | 设置 WebSocket 连接地址          | `WithWSURL("ws://localhost:6700")`     |
+| `WithWSReconnectInterval(d)`        | 设置断线重连间隔                 | `WithWSReconnectInterval(3*time.Second)` |
+| `WithWSSelfID(id int64)`            | 设置 SelfID                      | `WithWSSelfID(123456789)`              |
+| `WithWSAccessToken(token string)`   | 设置访问令牌                     | `WithWSAccessToken("secret")`          |
+| `WithWSReadTimeout(d)`              | 设置读取超时                     | `WithWSReadTimeout(30*time.Second)`    |
+| `WithWSWriteTimeout(d)`             | 设置写入超时                     | `WithWSWriteTimeout(30*time.Second)`   |
+| `WithWSActionHandler(handler)`      | 设置 Action 请求处理器            | `WithWSActionHandler(handler)`         |
 
 **主要方法**:
 
