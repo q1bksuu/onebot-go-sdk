@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/q1bksuu/onebot-go-sdk/v11/entity"
+	"github.com/q1bksuu/onebot-go-sdk/v11/server"
 	"github.com/stretchr/testify/require"
 )
 
@@ -65,4 +67,78 @@ func TestWebSocketClient_HandleActionMessage(t *testing.T) {
 		require.Equal(t, entity.StatusFailed, resp.Status)
 		require.Equal(t, entity.ActionResponseRetcode(1400), resp.Retcode)
 	})
+}
+
+func TestNewWebSocketClient_WithWSConfig(t *testing.T) {
+	t.Parallel()
+
+	cfg := WSClientConfig{
+		URL:               "ws://example",
+		ReconnectInterval: 2 * time.Second,
+		SelfID:            123,
+		AccessToken:       "token",
+		ReadTimeout:       3 * time.Second,
+		WriteTimeout:      4 * time.Second,
+	}
+
+	client := NewWebSocketClient(WithWSConfig(cfg))
+
+	require.Equal(t, cfg, client.cfg)
+}
+
+func TestNewWebSocketClient_OptionsOverride(t *testing.T) {
+	t.Parallel()
+
+	cfg := WSClientConfig{
+		URL:               "ws://example",
+		ReconnectInterval: 2 * time.Second,
+		SelfID:            123,
+		AccessToken:       "token",
+		ReadTimeout:       3 * time.Second,
+		WriteTimeout:      4 * time.Second,
+	}
+
+	client := NewWebSocketClient(
+		WithWSConfig(cfg),
+		WithWSURL("ws://override"),
+		WithWSSelfID(456),
+		WithWSAccessToken("override-token"),
+	)
+
+	require.Equal(t, "ws://override", client.cfg.URL)
+	require.Equal(t, int64(456), client.cfg.SelfID)
+	require.Equal(t, "override-token", client.cfg.AccessToken)
+	require.Equal(t, cfg.ReconnectInterval, client.cfg.ReconnectInterval)
+	require.Equal(t, cfg.ReadTimeout, client.cfg.ReadTimeout)
+	require.Equal(t, cfg.WriteTimeout, client.cfg.WriteTimeout)
+}
+
+func TestNewWebSocketClient_WithWSActionHandler(t *testing.T) {
+	t.Parallel()
+
+	handler := &mockActionHandler{
+		handleFn: func(
+			ctx context.Context,
+			req *entity.ActionRequest,
+		) (*entity.ActionRawResponse, error) {
+			_ = ctx
+			_ = req
+
+			return &entity.ActionRawResponse{Status: entity.StatusOK}, nil
+		},
+	}
+
+	client := NewWebSocketClient(WithWSActionHandler(handler))
+
+	require.Same(t, handler, client.actionHandler)
+}
+
+func TestWebSocketClient_Start_URLEmpty(t *testing.T) {
+	t.Parallel()
+
+	client := NewWebSocketClient()
+
+	err := client.Start(context.Background())
+
+	require.ErrorIs(t, err, server.ErrUniversalClientURLEmpty)
 }
