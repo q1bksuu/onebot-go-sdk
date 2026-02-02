@@ -57,7 +57,7 @@ onebot-11-go-sdk/
 
 **技术栈**：
 
-- **语言版本**: Go 1.25
+- **语言版本**: Go 1.24
 - **核心依赖**: mapstructure (v2.4.0), gorilla/websocket (v1.5.3), testify (v1.11.1), yaml.v3, go-radix (v1.0.0)
 - **质量保障**: golangci-lint (100+ linters), 单元测试 + 基准测试
 
@@ -116,7 +116,7 @@ graph TD
 
 ### 环境要求
 
-- Go 1.25+
+- Go 1.24+
 - Git
 
 ### 快速开始
@@ -209,10 +209,10 @@ go run . -config=config.yaml
 - **JSON 标签**: 必须使用 `snake_case` 风格
 - **依赖管理**: 禁用 `github.com/pkg/errors`，使用标准库 `errors`
 
-### Go 1.25 特性
+### Go 1.24 特性
 
 - 使用了 `copyloopvar` linter (Go 1.22+ 循环变量特性)
-- 模块版本要求 `go 1.25`
+- 模块版本要求 `go 1.24`
 
 ---
 
