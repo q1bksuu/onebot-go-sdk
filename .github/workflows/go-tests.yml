@@ -78,7 +78,7 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: coverage-report
-          path: ./coverage.html
+          path: ./coverage.out
           retention-days: 30
 #  benchmark:
 #    runs-on: ubuntu-latest
