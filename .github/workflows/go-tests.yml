@@ -80,45 +80,45 @@ jobs:
           name: coverage-report
           path: ./coverage.html
           retention-days: 30
-  benchmark:
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      pull-requests: write
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: ./.github/actions/go-setup
-
-      - name: Install benchstat
-        run: go install golang.org/x/perf/cmd/benchstat@latest
-
-      - name: Benchmark base (main)
-        run: |
-          git fetch origin main
-          git checkout origin/main
-          go test ./pkg/foo -bench=. -benchmem -count=5 > base.txt
-
-      - name: Benchmark PR
-        run: |
-          git checkout -
-          go test ./pkg/foo -bench=. -benchmem -count=5 > pr.txt
-
-      - name: Compare benchmarks
-        id: bench
-        run: |
-          benchstat base.txt pr.txt | tee benchstat.txt
-
-      - name: Comment benchmark results on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const run = require('./.github/scripts/benchmark-comment')
-            await run({ github, context, core })
+#  benchmark:
+#    runs-on: ubuntu-latest
+#
+#    permissions:
+#      contents: read
+#      pull-requests: write
+#
+#    steps:
+#      - name: Checkout code
+#        uses: actions/checkout@v6
+#        with:
+#          fetch-depth: 0
+#
+#      - name: Set up Go
+#        uses: ./.github/actions/go-setup
+#
+#      - name: Install benchstat
+#        run: go install golang.org/x/perf/cmd/benchstat@latest
+#
+#      - name: Benchmark base (main)
+#        run: |
+#          git fetch origin main
+#          git checkout origin/main
+#          go test ./pkg/foo -bench=. -benchmem -count=5 > base.txt
+#
+#      - name: Benchmark PR
+#        run: |
+#          git checkout -
+#          go test ./pkg/foo -bench=. -benchmem -count=5 > pr.txt
+#
+#      - name: Compare benchmarks
+#        id: bench
+#        run: |
+#          benchstat base.txt pr.txt | tee benchstat.txt
+#
+#      - name: Comment benchmark results on PR
+#        if: github.event_name == 'pull_request'
+#        uses: actions/github-script@v8
+#        with:
+#          script: |
+#            const run = require('./.github/scripts/benchmark-comment')
+#            await run({ github, context, core })
