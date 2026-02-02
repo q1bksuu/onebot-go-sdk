@@ -20,7 +20,7 @@ OneBot 11 协议的 Go 语言 SDK 实现。
 go get github.com/q1bksuu/onebot-go-sdk
 ```
 
-要求 Go 1.25 或更高版本。
+要求 Go 1.24 或更高版本。
 
 ## 快速开始
 
