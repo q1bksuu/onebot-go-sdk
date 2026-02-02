@@ -30,10 +30,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.24'
-          cache: true
+        uses: ./.github/actions/go-setup
 
       - name: Run GolangCI-Lint
         uses: golangci/golangci-lint-action@v9
@@ -46,9 +43,5 @@ jobs:
         uses: actions/github-script@v8
         with:
           script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '❌ The GolangCI-Lint check failed. Please check the logs above for details.'
-            })
+            const run = require('./.github/scripts/lint-comment')
+            await run({ github, context, core })
