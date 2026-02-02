@@ -2,12 +2,12 @@ const fs = require('fs');
 
 module.exports = async ({ github, context }) => {
   try {
-    const coverage = fs.readFileSync('./coverage.out', 'utf8');
+    const coverage = fs.readFileSync('./coverage.txt', 'utf8');
     const lines = coverage.split('\n');
     let totalStmt = 0;
     for (const line of lines) {
       if (line.includes('total:')) {
-        totalStmt = line.split('\t')[1];
+        totalStmt = line.split('\t').at(-1);
         break;
       }
     }
