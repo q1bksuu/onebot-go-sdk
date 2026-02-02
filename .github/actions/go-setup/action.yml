@@ -1,0 +1,25 @@
+name: Go Setup
+description: Set up Go for CI.
+# Go version default lives here. Update this value to bump CI Go version.
+inputs:
+  go-version:
+    description: Go version to use.
+    required: false
+    default: '1.24'
+  cache:
+    description: Enable Go module caching.
+    required: false
+    default: 'true'
+  cache-dependency-path:
+    description: Path to the dependency file for caching.
+    required: false
+    default: 'go.sum'
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: ${{ inputs.go-version }}
+        cache: ${{ inputs.cache }}
+        cache-dependency-path: ${{ inputs.cache-dependency-path }}
