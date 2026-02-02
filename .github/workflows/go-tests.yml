@@ -28,7 +28,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
-      pull-requests: write
 
     steps:
       - name: Checkout code
@@ -44,6 +43,28 @@ jobs:
           cache-dependency-path: go.sum
 
       - name: Run unit tests
+        run: go test -v -race ./...
+
+  coverage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24'
+          cache: true
+          cache-dependency-path: go.sum
+
+      - name: Run coverage tests
         run: go test -v -race -coverprofile='coverage.out' ./...
 
       - name: Upload coverage reports
@@ -89,6 +110,10 @@ jobs:
   benchmark:
     runs-on: ubuntu-latest
 
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -102,16 +127,24 @@ jobs:
           cache: true
           cache-dependency-path: go.sum
 
-      - name: Run benchmarks
-        run: go test -bench=. -benchmem -benchtime=10x ./... | tee benchmark_output.txt
+      - name: Install benchstat
+        run: go install golang.org/x/perf/cmd/benchstat@latest
 
-      - name: Store benchmark results
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          tool: go
-          output-file-path: benchmark_output.txt
-          skip-fetch-gh-pages: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Benchmark base (main)
+        run: |
+          git fetch origin main
+          git checkout origin/main
+          go test ./pkg/foo -bench=. -benchmem -count=5 > base.txt
+
+      - name: Benchmark PR
+        run: |
+          git checkout -
+          go test ./pkg/foo -bench=. -benchmem -count=5 > pr.txt
+
+      - name: Compare benchmarks
+        id: bench
+        run: |
+          benchstat base.txt pr.txt | tee benchstat.txt
 
       - name: Comment benchmark results on PR
         if: github.event_name == 'pull_request'
@@ -119,22 +152,19 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            try {
-              const benchmarkOutput = fs.readFileSync('./benchmark_output.txt', 'utf8');
-              const lines = benchmarkOutput.split('\n').filter(line => line.includes('Benchmark'));
+            const result = fs.readFileSync('benchstat.txt', 'utf8');
             
-              if (lines.length > 0) {
-                let comment = ' 🚀 Benchmark Results\n\n```\n';
-                comment += lines.join('\n');
-                comment += '\n```\n\nView full results in the [artifacts](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})';
+            const body = `
+              ### 📊 Go Benchmark Result
             
-                github.rest.issues.createComment({
-                  issue_number: context.issue.number,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  body: comment
-                })
-              }
-            } catch (error) {
-              console.log('Could not generate benchmark comment:', error);
-            }
+              \`\`\`
+              ${result}
+              \`\`\`
+              `;
+              
+              await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
