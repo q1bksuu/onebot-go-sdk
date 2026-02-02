@@ -56,7 +56,9 @@ jobs:
         uses: ./.github/actions/go-setup
 
       - name: Run coverage tests
-        run: go test -v -race -coverprofile='coverage.out' ./...
+        run: |
+          go test -v -race -coverprofile='coverage.out' ./...
+          go tool cover -func=coverage.out > coverage.txt
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v5
@@ -78,7 +80,9 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: coverage-report
-          path: ./coverage.out
+          path: |
+            ./coverage.out
+            ./coverage.txt
           retention-days: 30
 #  benchmark:
 #    runs-on: ubuntu-latest
