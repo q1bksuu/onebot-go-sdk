@@ -37,11 +37,3 @@ jobs:
         with:
           version: v2.7.1
           args: --timeout=5m
-
-      - name: Comment PR with lint results
-        if: github.event_name == 'pull_request' && failure()
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const run = require('./.github/scripts/lint-comment')
-            await run({ github, context, core })
