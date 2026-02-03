@@ -1,2 +1,7 @@
 ignore:
-  - '*.gen.go'
+  - '**/*.gen.go'
+  - 'v11/cmd/**/*'
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
