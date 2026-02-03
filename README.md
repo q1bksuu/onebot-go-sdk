@@ -2,6 +2,8 @@
 
 OneBot 11 协议的 Go 语言 SDK 实现。
 
+[![codecov](https://codecov.io/github/q1bksuu/onebot-go-sdk/graph/badge.svg?token=F51V2M4L6G)](https://codecov.io/github/q1bksuu/onebot-go-sdk)
+
 > **注意**: 本项目目前处于早期开发阶段，个人使用为主，API 尚未稳定，可能随时发生破坏性变更。不建议在生产环境中使用。
 
 ## 功能特性
