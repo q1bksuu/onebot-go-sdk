@@ -60,10 +60,7 @@ jobs:
         uses: ./.github/actions/go-setup
 
       - name: Run coverage tests
-        run: |
-          go test -v -race -coverprofile='coverage_full.out' ./...
-          cat coverage_full.out | grep -v ".gen.go" > coverage.out
-          go tool cover -func=coverage.out > coverage.txt
+        run: go test -v -race -coverprofile='coverage.out' ./...
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v5
@@ -74,21 +71,11 @@ jobs:
           disable_search: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Comment coverage on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const run = require('./.github/scripts/coverage-comment')
-            await run({ github, context, core })
-
       - name: Archive coverage artifacts
         uses: actions/upload-artifact@v5
         with:
           name: coverage-report
-          path: |
-            ./coverage.out
-            ./coverage.txt
+          path: ./coverage.out
           retention-days: 30
   benchmark:
     name: Run Go Benchmark Tests
@@ -123,8 +110,7 @@ jobs:
 
       - name: Compare benchmarks
         id: bench
-        run: |
-          benchstat base.txt pr.txt | tee benchstat.txt
+        run: benchstat base.txt pr.txt | tee benchstat.txt
 
       - name: Comment benchmark results on PR
         if: github.event_name == 'pull_request'
