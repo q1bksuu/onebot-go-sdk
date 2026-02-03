@@ -8,6 +8,7 @@ on:
       - 'go.mod'
       - 'go.sum'
       - '.github/workflows/go-tests.yml'
+      - 'codecov.yml'
   pull_request:
     branches: [ main ]
     paths:
@@ -15,6 +16,7 @@ on:
       - 'go.mod'
       - 'go.sum'
       - '.github/workflows/go-tests.yml'
+      - 'codecov.yml'
 
 permissions:
   contents: read
