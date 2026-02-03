@@ -117,7 +117,7 @@ func generateOutputFilename(original string) string {
 	ext := filepath.Ext(base)
 	name := base[:len(base)-len(ext)]
 
-	return filepath.Join(dir, name+"_setter_getter.go")
+	return filepath.Join(dir, name+"_setter_getter.gen.go")
 }
 
 // findConstsFiles 自动扫描目录中的 *_consts.go 文件.

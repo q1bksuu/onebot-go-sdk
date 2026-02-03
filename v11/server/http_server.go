@@ -1,5 +1,5 @@
-//go:generate go run ../cmd/bindings-gen -config=../cmd/bindings-gen/config.yaml -http-server-actions-register-output=./http_server_actions_register.go
-//go:generate go run ../cmd/event-bindings-gen -config=../cmd/event-bindings-gen/config.yaml -http-server-events-register-output=./http_server_events_register.go
+//go:generate go run ../cmd/bindings-gen -config=../cmd/bindings-gen/config.yaml -http-server-actions-register-output=./http_server_actions_register.gen.go
+//go:generate go run ../cmd/event-bindings-gen -config=../cmd/event-bindings-gen/config.yaml -http-server-events-register-output=./http_server_events_register.gen.go
 package server
 
 import (
