@@ -21,6 +21,7 @@ permissions:
 
 jobs:
   test:
+    name: Run Go Unit Tests
     strategy:
       matrix:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
@@ -41,6 +42,7 @@ jobs:
         run: go test -v -race ./...
 
   coverage:
+    name: Run Go Coverage Tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
