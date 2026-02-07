@@ -6,6 +6,16 @@ OneBot 11 协议的 Go 语言 SDK 实现
 
 ## 变更记录 (Changelog)
 
+### 2026-02-04 (当前版本)
+
+- **新增 Skill**: 创建 `go-test-gen` skill，提供智能单元测试生成功能
+  - 自动分析 Go 源代码并生成符合项目规范的测试
+  - 支持表驱动测试、基准测试、Mock 生成、覆盖率驱动
+  - 完整的文档和示例代码（[.claude/skills/go-test-gen/](./.claude/skills/go-test-gen/)）
+- **文档优化**: 精简 CLAUDE.md 的测试章节，将详细内容移至 skill
+  - 保留核心规范和快速参考
+  - 指向 skill 文档获取完整指南
+
 ### 2026-01-05 17:46:16
 
 - **通信层重构**: 新增 WebSocket 支持 (Client/Server)，引入统一服务器 (UnifiedServer)
@@ -306,5 +316,7 @@ d.HandleActionRequest(ctx, action, params)
 
 ---
 
-*文档更新时间: 2026-01-05 17:46:16*
-*文档版本: v1.1.0 (通信层重构)*
+*文档更新时间: 2026-02-04*
+*文档版本: v1.2.0 (新增 go-test-gen skill)*
+
+

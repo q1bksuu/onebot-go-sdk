@@ -1,0 +1,4 @@
+interface:
+  display_name: "Go Test Generator"
+  short_description: "Generate Go tests, benchmarks, mocks, coverage"
+  default_prompt: "Use $go-test-gen to generate table-driven tests for v11/entity/base.go."
