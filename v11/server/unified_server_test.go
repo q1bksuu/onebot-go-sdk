@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -218,6 +219,45 @@ func TestUnifiedServer_Routing_UniversalPath_DistinguishByProtocol(t *testing.T)
 	var wsResp entity.ActionResponseEnvelope
 	require.NoError(t, json.Unmarshal(msg, &wsResp))
 	assert.Equal(t, "ws", wsResp.Message)
+}
+
+func TestUnifiedServer_Shutdown(t *testing.T) {
+	t.Parallel()
+
+	cfg := UnifiedConfig{
+		ServerConfig: ServerConfig{
+			Addr: "127.0.0.1:0",
+		},
+	}
+
+	server := NewUnifiedServer(cfg)
+
+	listenCtx, listenCancel := context.WithTimeout(context.Background(), time.Second)
+	t.Cleanup(listenCancel)
+
+	var listenConfig net.ListenConfig
+
+	listener, err := listenConfig.Listen(listenCtx, "tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	done := make(chan struct{})
+
+	go func() {
+		_ = server.Srv.Serve(listener)
+
+		close(done)
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	require.NoError(t, server.Shutdown(ctx))
+
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for unified server shutdown")
+	}
 }
 
 func TestUnifiedServer_StartAndShutdown(t *testing.T) {
