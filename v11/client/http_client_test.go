@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/q1bksuu/onebot-go-sdk/v11/entity"
 	"github.com/stretchr/testify/assert"
@@ -164,4 +166,103 @@ func TestHTTPClient_SendPrivateMsg_Success(t *testing.T) {
 	resp, err := client.SendPrivateMsg(context.Background(), req, WithMethod(http.MethodPost))
 	require.NoError(t, err, "SendPrivateMsg error")
 	require.Equal(t, int64(321), resp.Data.MessageId)
+}
+
+func TestHTTPClientOptions_PathPrefixAndTimeout(t *testing.T) {
+	t.Parallel()
+
+	opts := clientOptions{}
+	WithPathPrefix("/bot/")(&opts)
+	WithTimeout(5 * time.Second)(&opts)
+
+	require.Equal(t, "/bot/", opts.pathPrefix)
+	require.Equal(t, 5*time.Second, opts.timeout)
+}
+
+func TestNewHTTPClient_UsesTimeoutOption(t *testing.T) {
+	t.Parallel()
+
+	client, err := NewHTTPClient("http://example", WithTimeout(2*time.Second))
+	require.NoError(t, err)
+	require.Equal(t, 2*time.Second, client.httpClient.Timeout)
+}
+
+func TestHTTPClient_resolveMethod_DefaultsToPost(t *testing.T) {
+	t.Parallel()
+
+	method := resolveMethod("", "")
+	require.Equal(t, http.MethodPost, method)
+}
+
+func TestHTTPClient_validateMethod_Unsupported(t *testing.T) {
+	t.Parallel()
+
+	err := validateMethod(http.MethodPut)
+	require.Error(t, err)
+	require.ErrorIs(t, err, errUnsupportedHTTPMethod)
+}
+
+func TestHTTPClient_buildTargetURL_EmptyPath(t *testing.T) {
+	t.Parallel()
+
+	targetURL, err := buildTargetURL("http://example.com/", "")
+	require.NoError(t, err)
+	require.Equal(t, "http://example.com", targetURL.String())
+}
+
+func TestHTTPClient_buildTargetURL_MissingSchemeOrHost(t *testing.T) {
+	t.Parallel()
+
+	_, err := buildTargetURL("localhost:5700", "/get")
+	require.Error(t, err)
+	require.ErrorIs(t, err, errMissingSchemeOrHost)
+}
+
+func TestHTTPClient_buildTargetURL_InvalidURL(t *testing.T) {
+	t.Parallel()
+
+	_, err := buildTargetURL("http://example.com", "%zz")
+	require.Error(t, err)
+	require.ErrorContains(t, err, "build url")
+}
+
+func TestHTTPClient_prepareRequestBody_Unsupported(t *testing.T) {
+	t.Parallel()
+
+	targetURL, err := url.Parse("http://example.com")
+	require.NoError(t, err)
+
+	_, err = prepareRequestBody(http.MethodPut, targetURL, map[string]any{}, nil, struct{}{})
+	require.Error(t, err)
+	require.ErrorIs(t, err, errUnsupportedHTTPMethod)
+}
+
+func TestHTTPClient_buildPostBody_MarshalError(t *testing.T) {
+	t.Parallel()
+
+	targetURL, err := url.Parse("http://example.com")
+	require.NoError(t, err)
+
+	req := struct {
+		Bad chan int `json:"bad"`
+	}{
+		Bad: make(chan int),
+	}
+
+	_, err = buildPostBody(targetURL, nil, req)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "marshal request")
+}
+
+func TestHTTPClient_mergeParams_SliceAny(t *testing.T) {
+	t.Parallel()
+
+	values := url.Values{}
+	mergeParams(values, map[string]any{
+		"tags":  []any{"a", "b"},
+		"count": 2,
+	})
+
+	require.Equal(t, []string{"a", "b"}, values["tags"])
+	require.Equal(t, []string{"2"}, values["count"])
 }

@@ -225,6 +225,29 @@ func TestUnmarshalToMapAndStructTypeConversion(t *testing.T) {
 	require.True(t, data.Active)
 }
 
+func TestNormalizePath(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "empty", in: "", want: ""},
+		{name: "root", in: "/", want: ""},
+		{name: "no_slash", in: "api", want: "/api"},
+		{name: "trim_both", in: "/api/v1/", want: "/api/v1"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			require.Equal(t, tc.want, NormalizePath(tc.in))
+		})
+	}
+}
+
 // TestUnmarshalToMapAndStructUnicodeCharacters 测试 Unicode 字符.
 func TestUnmarshalToMapAndStructUnicodeCharacters(t *testing.T) {
 	t.Parallel()

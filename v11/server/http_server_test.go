@@ -60,6 +60,30 @@ func TestNewHTTPServer_PathPrefixNormalizeAndHandler(t *testing.T) {
 	assert.Equal(t, entity.RetcodeSuccess, resp.Retcode)
 }
 
+func TestNewHTTPServer_OptionsApplied(t *testing.T) {
+	t.Parallel()
+
+	server := NewHTTPServer(
+		WithAddr(":1234"),
+		WithAPIPathPrefix("api"),
+		WithEventPath("/event"),
+		WithReadHeaderTimeout(1*time.Second),
+		WithReadTimeout(2*time.Second),
+		WithWriteTimeout(3*time.Second),
+		WithIdleTimeout(4*time.Second),
+		WithAccessToken("token"),
+	)
+
+	require.Equal(t, ":1234", server.cfg.Addr)
+	require.Equal(t, "/api/", server.cfg.APIPathPrefix)
+	require.Equal(t, "/event", server.cfg.EventPath)
+	require.Equal(t, 1*time.Second, server.cfg.ReadHeaderTimeout)
+	require.Equal(t, 2*time.Second, server.cfg.ReadTimeout)
+	require.Equal(t, 3*time.Second, server.cfg.WriteTimeout)
+	require.Equal(t, 4*time.Second, server.cfg.IdleTimeout)
+	require.Equal(t, "token", server.cfg.AccessToken)
+}
+
 func newTestServer(cfg HTTPConfig, handler dispatcher.ActionRequestHandlerFunc) *HTTPServer {
 	if cfg.APIPathPrefix == "" {
 		cfg.APIPathPrefix = "/"

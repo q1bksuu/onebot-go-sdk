@@ -242,6 +242,53 @@ func TestHandleActionMessageMapping(t *testing.T) {
 	})
 }
 
+func TestNewWebSocketServer_OptionsApplied(t *testing.T) {
+	t.Parallel()
+
+	checkOrigin := func(_ *http.Request) bool { return false }
+
+	server := NewWebSocketServer(
+		WithWSAddr(":6700"),
+		WithWSPathPrefix("/api"),
+		WithWSAccessToken("token"),
+		WithWSCheckOrigin(checkOrigin),
+		WithWSReadTimeout(1*time.Second),
+		WithWSWriteTimeout(2*time.Second),
+		WithWSIdleTimeout(3*time.Second),
+	)
+
+	require.Equal(t, ":6700", server.cfg.Addr)
+	require.Equal(t, "/api", server.cfg.PathPrefix)
+	require.Equal(t, "token", server.cfg.AccessToken)
+	require.Equal(t, 1*time.Second, server.cfg.ReadTimeout)
+	require.Equal(t, 2*time.Second, server.cfg.WriteTimeout)
+	require.Equal(t, 3*time.Second, server.cfg.IdleTimeout)
+	require.False(t, server.upgrader.CheckOrigin(httptest.NewRequest(http.MethodGet, "http://example.com", nil)))
+}
+
+func TestWebSocketServer_Start_ShutdownOnContextCancel(t *testing.T) {
+	t.Parallel()
+
+	server := NewWebSocketServer(WithWSAddr("127.0.0.1:0"))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	errCh := make(chan error, 1)
+
+	go func() {
+		errCh <- server.Start(ctx)
+	}()
+
+	time.Sleep(20 * time.Millisecond)
+	cancel()
+
+	select {
+	case err := <-errCh:
+		require.NoError(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for server to stop")
+	}
+}
+
 func TestWriteHandshakeError(t *testing.T) {
 	t.Parallel()
 
