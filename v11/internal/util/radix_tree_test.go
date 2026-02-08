@@ -235,3 +235,204 @@ func TestRadixTree_ComplexType(t *testing.T) {
 	assert.Equal(t, "Alice", person.Name)
 	assert.Equal(t, 30, person.Age)
 }
+
+func TestRadixTree_EmptyQueries(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name string
+		run  func(tree *RadixTree[string, int]) (string, int, bool)
+	}{
+		{
+			name: "minimum",
+			run: func(tree *RadixTree[string, int]) (string, int, bool) {
+				return tree.Minimum()
+			},
+		},
+		{
+			name: "maximum",
+			run: func(tree *RadixTree[string, int]) (string, int, bool) {
+				return tree.Maximum()
+			},
+		},
+		{
+			name: "longest_prefix",
+			run: func(tree *RadixTree[string, int]) (string, int, bool) {
+				return tree.LongestPrefix("missing")
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			tree := NewRadixTree[string, int]()
+			key, value, ok := testCase.run(tree)
+
+			assert.False(t, ok)
+			assert.Empty(t, key)
+			assert.Zero(t, value)
+		})
+	}
+}
+
+func TestRadixTree_TypeMismatchGetDelete(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name       string
+		run        func(tree *RadixTree[string, int]) (int, bool)
+		assertTree func(t *testing.T, tree *RadixTree[string, int])
+	}{
+		{
+			name: "get",
+			run: func(tree *RadixTree[string, int]) (int, bool) {
+				return tree.Get("mismatch")
+			},
+			assertTree: func(t *testing.T, tree *RadixTree[string, int]) {
+				t.Helper()
+				assert.Equal(t, 1, tree.Len())
+			},
+		},
+		{
+			name: "delete",
+			run: func(tree *RadixTree[string, int]) (int, bool) {
+				return tree.Delete("mismatch")
+			},
+			assertTree: func(t *testing.T, tree *RadixTree[string, int]) {
+				t.Helper()
+				assert.Zero(t, tree.Len())
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			tree := NewRadixTree[string, int]()
+			tree.tree.Insert("mismatch", "value")
+
+			value, ok := testCase.run(tree)
+
+			assert.False(t, ok)
+			assert.Zero(t, value)
+			testCase.assertTree(t, tree)
+		})
+	}
+}
+
+func TestRadixTree_TypeMismatchQueries(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name string
+		run  func(tree *RadixTree[string, int]) (string, int, bool)
+	}{
+		{
+			name: "longest_prefix",
+			run: func(tree *RadixTree[string, int]) (string, int, bool) {
+				return tree.LongestPrefix("mismatch/sub")
+			},
+		},
+		{
+			name: "minimum",
+			run: func(tree *RadixTree[string, int]) (string, int, bool) {
+				return tree.Minimum()
+			},
+		},
+		{
+			name: "maximum",
+			run: func(tree *RadixTree[string, int]) (string, int, bool) {
+				return tree.Maximum()
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			tree := NewRadixTree[string, int]()
+			tree.tree.Insert("mismatch", "value")
+
+			key, value, ok := testCase.run(tree)
+
+			assert.False(t, ok)
+			assert.Empty(t, key)
+			assert.Zero(t, value)
+		})
+	}
+}
+
+func TestRadixTree_WalkSkipsTypeMismatch(t *testing.T) {
+	t.Parallel()
+
+	tree := NewRadixTree[string, int]()
+	tree.Insert("alpha", 1)
+	tree.tree.Insert("zeta", "value")
+
+	visited := make(map[string]int)
+
+	tree.Walk(func(key string, value int) bool {
+		visited[key] = value
+
+		return false
+	})
+
+	value, ok := visited["alpha"]
+	require.True(t, ok, "expected alpha to be visited")
+	assert.Equal(t, 1, value)
+
+	_, ok = visited["zeta"]
+	assert.False(t, ok)
+}
+
+func TestRadixTree_WalkPrefixSkipsTypeMismatch(t *testing.T) {
+	t.Parallel()
+
+	tree := NewRadixTree[string, int]()
+	tree.Insert("app", 2)
+	tree.Insert("apple", 3)
+	tree.tree.Insert("app/bad", "value")
+
+	visited := make(map[string]int)
+
+	tree.WalkPrefix("app", func(key string, value int) bool {
+		visited[key] = value
+
+		return false
+	})
+
+	require.NotEmpty(t, visited)
+
+	expectedValues := map[string]int{"app": 2, "apple": 3}
+	value, ok := visited["app"]
+	require.True(t, ok, "expected app to be visited")
+	assert.Equal(t, 2, value)
+
+	for key, value := range visited {
+		expectedValue, ok := expectedValues[key]
+		require.True(t, ok, "unexpected key visited: %s", key)
+		assert.Equal(t, expectedValue, value, "key %s should have correct value", key)
+	}
+
+	_, ok = visited["app/bad"]
+	assert.False(t, ok)
+}
+
+func TestRadixTree_ToMapSkipsTypeMismatch(t *testing.T) {
+	t.Parallel()
+
+	tree := NewRadixTree[string, int]()
+	tree.Insert("good", 1)
+	tree.tree.Insert("bad", "value")
+
+	result := tree.ToMap()
+
+	assert.Len(t, result, 1)
+	assert.Equal(t, 1, result["good"])
+	_, ok := result["bad"]
+	assert.False(t, ok)
+}

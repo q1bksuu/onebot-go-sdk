@@ -196,6 +196,60 @@ func TestUnmarshalToMapAndStructInvalidJSON(t *testing.T) {
 	require.Error(t, err)
 }
 
+// TestJsonUnmarshalToMapAndStruct_mapping_error 测试映射失败错误.
+func TestJsonUnmarshalToMapAndStruct_mapping_error(t *testing.T) {
+	t.Parallel()
+
+	type Person struct {
+		Name string `json:"name"`
+	}
+
+	jsonData := []byte(`{"name": "Alice"}`)
+
+	var (
+		person    Person
+		originMap map[string]any
+	)
+
+	err := JsonUnmarshalToMapAndStruct(jsonData, person, &originMap)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to map JSON data to struct")
+}
+
+// TestJsonTagMapping_invalid_result 测试非法目标类型.
+func TestJsonTagMapping_invalid_result(t *testing.T) {
+	t.Parallel()
+
+	source := map[string]any{"name": "Alice"}
+
+	type Person struct {
+		Name string `json:"name"`
+	}
+
+	var person Person
+
+	err := JsonTagMapping(source, person)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to create decoder")
+}
+
+// TestJsonTagMapping_decode_error 测试解码失败.
+func TestJsonTagMapping_decode_error(t *testing.T) {
+	t.Parallel()
+
+	source := []any{"not", "a", "map"}
+
+	type Person struct {
+		Name string `json:"name"`
+	}
+
+	var person Person
+
+	err := JsonTagMapping(source, &person)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to decode data to struct")
+}
+
 // TestUnmarshalToMapAndStructTypeConversion 测试类型转换.
 func TestUnmarshalToMapAndStructTypeConversion(t *testing.T) {
 	t.Parallel()
