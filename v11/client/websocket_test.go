@@ -93,6 +93,45 @@ func newActionConnServer(
 	}))
 }
 
+func newDialOnlyServer(
+	t *testing.T,
+	serverErrCh chan<- error,
+	holdConnCh <-chan struct{},
+) *httptest.Server {
+	t.Helper()
+
+	reportErr := func(err error) {
+		if err == nil {
+			return
+		}
+
+		select {
+		case serverErrCh <- err:
+		default:
+		}
+	}
+
+	upgrader := websocket.Upgrader{
+		CheckOrigin: func(_ *http.Request) bool { return true },
+	}
+
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			reportErr(err)
+
+			return
+		}
+
+		defer func() {
+			closeErr := conn.Close()
+			reportErr(closeErr)
+		}()
+
+		<-holdConnCh
+	}))
+}
+
 func newPingActionHandler() *mockActionHandler {
 	return &mockActionHandler{
 		handleFn: func(_ context.Context, req *entity.ActionRequest) (*entity.ActionRawResponse, error) {
@@ -262,18 +301,72 @@ func TestWebSocketClient_BuildHeaders(t *testing.T) {
 	require.Equal(t, "Bearer token", headers.Get("Authorization"))
 }
 
+func TestWebSocketClient_BuildHeaders_NoAccessToken(t *testing.T) {
+	t.Parallel()
+
+	client := NewWebSocketClient(WithWSSelfID(12345))
+
+	headers := client.buildHeaders("Universal")
+	require.Equal(t, "12345", headers.Get("X-Self-Id"))
+	require.Equal(t, "Universal", headers.Get("X-Client-Role"))
+	require.Empty(t, headers.Get("Authorization"))
+}
+
 func TestWebSocketClient_DialWithReconnect_ContextCanceled(t *testing.T) {
 	t.Parallel()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	client := NewWebSocketClient(WithWSReconnectInterval(10 * time.Millisecond))
+	client := NewWebSocketClient()
 
 	_, err := client.dialWithReconnect(ctx, "ws://example.com/ws", http.Header{})
 	require.Error(t, err)
 	require.ErrorIs(t, err, context.Canceled)
 	require.ErrorContains(t, err, "dial context canceled")
+}
+
+func TestWebSocketClient_DialWithReconnect_ReconnectContextCanceled(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	t.Cleanup(cancel)
+
+	client := NewWebSocketClient(WithWSReconnectInterval(200 * time.Millisecond))
+
+	_, err := client.dialWithReconnect(ctx, "ws://127.0.0.1:0/ws", http.Header{})
+	require.Error(t, err)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+	require.ErrorContains(t, err, "reconnect context canceled")
+}
+
+func TestWebSocketClient_DialWithReconnect_Success(t *testing.T) {
+	t.Parallel()
+
+	serverErrCh := make(chan error, 1)
+	holdConnCh := make(chan struct{})
+
+	serverForTest := newDialOnlyServer(t, serverErrCh, holdConnCh)
+	t.Cleanup(serverForTest.Close)
+	t.Cleanup(func() { close(holdConnCh) })
+
+	wsURL := "ws" + strings.TrimPrefix(serverForTest.URL, "http")
+
+	client := NewWebSocketClient(WithWSReconnectInterval(10 * time.Millisecond))
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	t.Cleanup(cancel)
+
+	conn, err := client.dialWithReconnect(ctx, wsURL, http.Header{"X-Test": []string{"1"}})
+	require.NoError(t, err)
+	require.NotNil(t, conn)
+	t.Cleanup(func() { _ = conn.Close() })
+
+	select {
+	case err := <-serverErrCh:
+		require.NoError(t, err)
+	default:
+	}
 }
 
 func TestWebSocketClient_Shutdown_NoConn(t *testing.T) {
@@ -286,6 +379,53 @@ func TestWebSocketClient_Shutdown_NoConn(t *testing.T) {
 
 	err := client.Shutdown(ctx)
 	require.NoError(t, err)
+}
+
+func TestWebSocketClient_Shutdown_WithConn(t *testing.T) {
+	t.Parallel()
+
+	serverErrCh := make(chan error, 1)
+	holdConnCh := make(chan struct{})
+
+	serverForTest := newDialOnlyServer(t, serverErrCh, holdConnCh)
+	t.Cleanup(serverForTest.Close)
+	t.Cleanup(func() { close(holdConnCh) })
+
+	wsURL := "ws" + strings.TrimPrefix(serverForTest.URL, "http")
+
+	conn, resp, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	require.NoError(t, err)
+
+	if resp != nil {
+		t.Cleanup(func() { _ = resp.Body.Close() })
+	}
+
+	t.Cleanup(func() { _ = conn.Close() })
+
+	client := NewWebSocketClient()
+	client.conn = conn
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	t.Cleanup(cancel)
+
+	err = client.Shutdown(ctx)
+	require.NoError(t, err)
+}
+
+func TestWebSocketClient_Shutdown_Timeout(t *testing.T) {
+	t.Parallel()
+
+	client := NewWebSocketClient()
+	client.wg.Add(1)
+	t.Cleanup(client.wg.Done)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	t.Cleanup(cancel)
+
+	err := client.Shutdown(ctx)
+	require.Error(t, err)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
+	require.ErrorContains(t, err, "shutdown timeout")
 }
 
 func TestWebSocketClient_BroadcastEvent_NoConn(t *testing.T) {
@@ -306,6 +446,40 @@ func TestWebSocketClient_ClearConn(t *testing.T) {
 
 	client.clearConn(conn)
 	require.Nil(t, client.conn)
+}
+
+func TestWebSocketClient_ClearConn_IgnoreOther(t *testing.T) {
+	t.Parallel()
+
+	client := NewWebSocketClient()
+	conn := &websocket.Conn{}
+	otherConn := &websocket.Conn{}
+	client.conn = conn
+
+	client.clearConn(otherConn)
+	require.Same(t, conn, client.conn)
+}
+
+func TestWebSocketClient_ServeActionConn_NoHandler(t *testing.T) {
+	t.Parallel()
+
+	client := NewWebSocketClient()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+
+	go func() {
+		client.serveActionConn(ctx, nil)
+		close(done)
+	}()
+
+	cancel()
+
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("timeout waiting for serveActionConn to return")
+	}
 }
 
 func TestWebSocketClient_Start_RunServeActionConn(t *testing.T) {

@@ -92,6 +92,25 @@ func newTestServer(cfg HTTPConfig, handler dispatcher.ActionRequestHandlerFunc) 
 	return NewHTTPServer(WithHTTPConfig(cfg), WithActionHandler(handler))
 }
 
+type errReadCloser struct {
+	err error
+}
+
+func (r *errReadCloser) Read(_ []byte) (int, error) {
+	return 0, r.err
+}
+
+func (r *errReadCloser) Close() error {
+	return nil
+}
+
+func newEventRequest(body string) *http.Request {
+	req := httptest.NewRequest(http.MethodPost, "/event", bytes.NewBufferString(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	return req
+}
+
 func TestHTTPServer_HandleRoot_PathAndNotFound(t *testing.T) {
 	t.Parallel()
 
@@ -173,6 +192,30 @@ func TestHTTPServer_AuthRequired_WithHeaderAndQuery(t *testing.T) {
 	assert.True(t, called, "handler should be called when auth success via query")
 }
 
+func TestHTTPServer_AuthRequired_HeaderPrecedence(t *testing.T) {
+	t.Parallel()
+
+	cfg := HTTPConfig{
+		APIPathPrefix: "/onebot",
+		AccessToken:   "secret",
+	}
+
+	called := false
+	server := newTestServer(cfg, func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
+		called = true
+
+		return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
+	})
+
+	recorder := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/onebot/test?access_token=secret", nil)
+	req.Header.Set("Authorization", "Token wrong")
+	server.Handler().ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusForbidden, recorder.Code)
+	assert.False(t, called, "handler should not be called when header token is invalid")
+}
+
 // 参数解析 & JSON.
 func TestHTTPServer_Params_QueryAndFormAndJSON(t *testing.T) {
 	t.Parallel()
@@ -215,8 +258,40 @@ func TestHTTPServer_Params_QueryAndFormAndJSON(t *testing.T) {
 
 	// JSON 应覆盖同名字段 b，并追加 c
 	assert.Equal(t, "override", params["b"])
-	_, ok = params["c"]
-	assert.True(t, ok, "expected param c from json")
+	numValue, ok := params["c"].(json.Number)
+	require.True(t, ok, "expected param c from json.Number")
+	assert.Equal(t, "3", numValue.String())
+}
+
+func TestHTTPServer_Params_FormURLEncoded(t *testing.T) {
+	t.Parallel()
+
+	type captured struct {
+		req *entity.ActionRequest
+	}
+
+	var capturedReq captured
+
+	handler := func(_ context.Context, req *entity.ActionRequest) (*entity.ActionRawResponse, error) {
+		capturedReq.req = req
+
+		return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
+	}
+	server := newTestServer(HTTPConfig{APIPathPrefix: "/onebot"}, handler)
+
+	body := bytes.NewBufferString("a=1&b=2")
+	recorder := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/onebot/do_something?q=3", body)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	server.Handler().ServeHTTP(recorder, req)
+	require.Equal(t, http.StatusOK, recorder.Code)
+	require.NotNil(t, capturedReq.req, "handler was not called")
+
+	params := capturedReq.req.Params
+	assert.Equal(t, "1", params["a"])
+	assert.Equal(t, "2", params["b"])
+	assert.Equal(t, "3", params["q"])
 }
 
 func TestHTTPServer_Params_InvalidForm(t *testing.T) {
@@ -294,6 +369,19 @@ func TestHTTPServer_WriteError_Mapping(t *testing.T) {
 			assert.Equal(t, testCase.wantStatus, recorder.Code)
 		})
 	}
+}
+
+func TestHTTPServer_WriteJSON_EncodeError(t *testing.T) {
+	t.Parallel()
+
+	server := newTestServer(HTTPConfig{APIPathPrefix: "/onebot"}, func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
+		return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
+	})
+
+	recorder := httptest.NewRecorder()
+	server.writeJSON(recorder, http.StatusOK, make(chan int))
+
+	assert.Contains(t, recorder.Body.String(), "encode response json failed")
 }
 
 func TestHTTPServer_NilResponse_DefaultFailed(t *testing.T) {
@@ -496,6 +584,41 @@ func TestHTTPServer_EventPath_InvalidJSON_Returns400(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, recorder.Code)
 }
 
+func TestHTTPServer_EventPath_HandlerError_Returns500(t *testing.T) {
+	t.Parallel()
+
+	cfg := HTTPConfig{
+		Addr:      ":0",
+		EventPath: "/event",
+	}
+	eventHandler := EventRequestHandlerFunc(func(_ context.Context, _ entity.Event) (map[string]any, error) {
+		return nil, errUnexpected
+	})
+
+	server := NewHTTPServer(WithHTTPConfig(cfg), WithActionHandler(dispatcher.ActionRequestHandlerFunc(
+		func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
+			return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
+		})), WithEventHandler(eventHandler))
+
+	recorder := httptest.NewRecorder()
+	req := newEventRequest(`{
+		"time": 1515204254,
+		"self_id": 10001000,
+		"post_type": "message",
+		"message_type": "private",
+		"sub_type": "friend",
+		"message_id": 12,
+		"user_id": 12345678,
+		"message": "Hello~",
+		"raw_message": "Hello~",
+		"font": 456
+	}`)
+	server.Handler().ServeHTTP(recorder, req)
+
+	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+	assert.Contains(t, recorder.Body.String(), errUnexpected.Error())
+}
+
 func TestHTTPServer_EventPath_EmptyQuickOp_Returns204(t *testing.T) {
 	t.Parallel()
 
@@ -532,6 +655,103 @@ func TestHTTPServer_EventPath_EmptyQuickOp_Returns204(t *testing.T) {
 	server.Handler().ServeHTTP(recorder, req)
 
 	assert.Equal(t, http.StatusNoContent, recorder.Code)
+}
+
+func TestHTTPServer_ParseEvent_Errors(t *testing.T) {
+	t.Parallel()
+
+	server := newTestServer(HTTPConfig{}, func(_ context.Context, _ *entity.ActionRequest) (*entity.ActionRawResponse, error) {
+		return &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}, nil
+	})
+
+	tests := []struct {
+		name      string
+		makeReq   func() *http.Request
+		assertErr func(t *testing.T, err error)
+	}{
+		{
+			name: "read body failed",
+			makeReq: func() *http.Request {
+				req := httptest.NewRequest(http.MethodPost, "/event", nil)
+				req.Body = &errReadCloser{err: errUnexpected}
+
+				return req
+			},
+			assertErr: func(t *testing.T, err error) {
+				assert.ErrorIs(t, err, errUnexpected)
+				assert.ErrorContains(t, err, "failed to read request body")
+			},
+		},
+		{
+			name: "invalid json",
+			makeReq: func() *http.Request {
+				return newEventRequest("{")
+			},
+			assertErr: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "invalid event json")
+			},
+		},
+		{
+			name: "missing post_type",
+			makeReq: func() *http.Request {
+				return newEventRequest(`{"time": 1}`)
+			},
+			assertErr: func(t *testing.T, err error) {
+				assert.ErrorIs(t, err, ErrMissingOrInvalidPostType)
+			},
+		},
+		{
+			name: "unknown post_type",
+			makeReq: func() *http.Request {
+				return newEventRequest(`{"post_type": "unknown"}`)
+			},
+			assertErr: func(t *testing.T, err error) {
+				assert.ErrorIs(t, err, ErrUnknownPostType)
+			},
+		},
+		{
+			name: "missing type field",
+			makeReq: func() *http.Request {
+				return newEventRequest(`{"post_type": "message"}`)
+			},
+			assertErr: func(t *testing.T, err error) {
+				assert.ErrorIs(t, err, ErrMissingTypeField)
+			},
+		},
+		{
+			name: "unknown event type",
+			makeReq: func() *http.Request {
+				return newEventRequest(`{"post_type": "message", "message_type": "unknown"}`)
+			},
+			assertErr: func(t *testing.T, err error) {
+				assert.ErrorIs(t, err, ErrUnknownEventType)
+			},
+		},
+		{
+			name: "parse event failed",
+			makeReq: func() *http.Request {
+				return newEventRequest(`{
+					"post_type": "message",
+					"message_type": "private",
+					"message_id": "bad"
+				}`)
+			},
+			assertErr: func(t *testing.T, err error) {
+				assert.ErrorContains(t, err, "parse event failed")
+			},
+		},
+	}
+
+	for _, testCase := range tests {
+
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := server.parseEvent(testCase.makeReq())
+			require.Error(t, err)
+			testCase.assertErr(t, err)
+		})
+	}
 }
 
 //nolint:gochecknoglobals
@@ -693,4 +913,13 @@ func TestEventDispatcher_Routing(t *testing.T) {
 	_, _ = dispatcher.HandleEvent(context.Background(), event)
 
 	assert.Equal(t, "message/private/friend", calledKey)
+}
+
+func TestFindEventConstructor_InvalidTreeStructure(t *testing.T) {
+	t.Parallel()
+
+	treeValue := &eventTreeValue{}
+	_, err := findEventConstructor(treeValue, &rawEvent{PostType: entity.EventPostTypeMessage}, []string{"message"})
+	require.Error(t, err)
+	assert.ErrorIs(t, err, ErrInvalidEventTreeStructure)
 }

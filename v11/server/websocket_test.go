@@ -163,6 +163,25 @@ func TestCheckAccess(t *testing.T) {
 		resp := wsServer.checkAccess(r)
 		require.Nil(t, resp)
 	})
+
+	t.Run("no_access_token_configured", func(t *testing.T) {
+		t.Parallel()
+
+		noAuthServer := &WebSocketServer{cfg: WSConfig{}}
+		r := httptest.NewRequest(http.MethodGet, "https://example.com/api", nil)
+		resp := noAuthServer.checkAccess(r)
+		require.Nil(t, resp)
+	})
+
+	t.Run("header_not_bearer_does_not_fallback_to_query", func(t *testing.T) {
+		t.Parallel()
+
+		r := httptest.NewRequest(http.MethodGet, "https://example.com/api?access_token=secret", nil)
+		r.Header.Set("Authorization", "Token secret")
+		resp := wsServer.checkAccess(r)
+		require.NotNil(t, resp)
+		require.Equal(t, entity.ActionResponseRetcode(1403), resp.Retcode)
+	})
 }
 
 func TestHandleActionMessageMapping(t *testing.T) {
@@ -266,6 +285,43 @@ func TestNewWebSocketServer_OptionsApplied(t *testing.T) {
 	require.False(t, server.upgrader.CheckOrigin(httptest.NewRequest(http.MethodGet, "http://example.com", nil)))
 }
 
+func TestWebSocketServer_Handler_NotFoundRoutes(t *testing.T) {
+	t.Parallel()
+
+	t.Run("api_and_event_mismatch", func(t *testing.T) {
+		t.Parallel()
+
+		server := NewWebSocketServer(WithWSPathPrefix("/ws"))
+		handler := server.Handler()
+		require.Same(t, server.Srv.Handler, handler)
+
+		cases := []string{
+			"/ws/api/extra",
+			"/ws/event/extra",
+		}
+		for _, path := range cases {
+			t.Run(path, func(t *testing.T) {
+				t.Parallel()
+
+				recorder := httptest.NewRecorder()
+				req := httptest.NewRequest(http.MethodGet, "http://example.com"+path, nil)
+				handler.ServeHTTP(recorder, req)
+				require.Equal(t, http.StatusNotFound, recorder.Code)
+			})
+		}
+	})
+
+	t.Run("universal_mismatch", func(t *testing.T) {
+		t.Parallel()
+
+		server := NewWebSocketServer()
+		recorder := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "http://example.com/other", nil)
+		server.Handler().ServeHTTP(recorder, req)
+		require.Equal(t, http.StatusNotFound, recorder.Code)
+	})
+}
+
 func TestWebSocketServer_Start_ShutdownOnContextCancel(t *testing.T) {
 	t.Parallel()
 
@@ -320,6 +376,54 @@ func TestWriteHandshakeError(t *testing.T) {
 		})
 		require.Equal(t, http.StatusForbidden, recorder.Code)
 	})
+}
+
+func TestWebSocketServer_CloseAllConns(t *testing.T) {
+	t.Parallel()
+
+	cfg := WSConfig{
+		ReadTimeout:  50 * time.Millisecond,
+		WriteTimeout: 50 * time.Millisecond,
+		IdleTimeout:  50 * time.Millisecond,
+	}
+	handler := &stubHandler{resp: &entity.ActionRawResponse{Status: entity.StatusOK, Retcode: 0}}
+
+	wsServer, testServer := newTestWebSocketServer(t, cfg, handler)
+	t.Cleanup(func() {
+		testServer.Close()
+	})
+
+	eventConn := mustDialWS(t, wsURL(testServer, "/event"), nil)
+	universalConn := mustDialWS(t, wsURL(testServer, "/"), nil)
+
+	t.Cleanup(func() {
+		_ = eventConn.Close()
+		_ = universalConn.Close()
+	})
+
+	require.Eventually(t, func() bool {
+		wsServer.mu.Lock()
+		defer wsServer.mu.Unlock()
+
+		return len(wsServer.eventConns) == 1 && len(wsServer.universalConn) == 1
+	}, 500*time.Millisecond, 10*time.Millisecond)
+
+	wsServer.closeAllConns()
+
+	require.Eventually(t, func() bool {
+		wsServer.mu.Lock()
+		defer wsServer.mu.Unlock()
+
+		return len(wsServer.eventConns) == 0 && len(wsServer.universalConn) == 0
+	}, 500*time.Millisecond, 10*time.Millisecond)
+
+	_ = eventConn.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
+	_, _, err := eventConn.ReadMessage()
+	require.Error(t, err)
+
+	_ = universalConn.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
+	_, _, err = universalConn.ReadMessage()
+	require.Error(t, err)
 }
 
 func TestHandleAPIAndUniversalFlow(t *testing.T) {
