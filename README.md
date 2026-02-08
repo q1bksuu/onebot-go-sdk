@@ -99,29 +99,49 @@ func main() {
 
 ### HTTP 服务端（接收事件上报）
 
+推荐使用“覆盖默认实现类 + 自动注册”的方式，写法更清晰，事件类型也更明确。
+
 ```go
 package main
 
 import (
-    "fmt"
-    "net/http"
+    "context"
+    "log"
 
     "github.com/q1bksuu/onebot-go-sdk/v11/entity"
     "github.com/q1bksuu/onebot-go-sdk/v11/server"
 )
 
+// 1) 覆盖默认实现类，只实现你关心的事件
+type MyEventService struct {
+    server.UnimplementedOneBotEventService
+}
+
+func (s *MyEventService) HandlePrivateMessage(ctx context.Context, ev *entity.PrivateMessageEvent) (map[string]any, error) {
+    log.Printf("收到私聊消息: %s\n", ev.RawMessage)
+    return map[string]any{"reply": "收到"}, nil
+}
+
 func main() {
-    srv := server.NewHTTPServer(server.HTTPServerConfig{
+    // 2) HTTP 服务配置
+    cfg := server.HTTPConfig{
+        Addr:        ":8080",
+        EventPath:   "/event",
         AccessToken: "your-access-token",
-    })
+    }
 
-    srv.OnPrivateMessage(func(w http.ResponseWriter, r *http.Request, event *entity.PrivateMessageEvent) {
-        fmt.Printf("收到私聊消息: %s\n", event.RawMessage)
-    })
+    // 3) 一步创建事件服务并启动
+    srv := server.NewHTTPEventServer(cfg, &MyEventService{})
 
-    http.ListenAndServe(":8080", srv)
+    if err := srv.Start(context.Background()); err != nil {
+        log.Fatal(err)
+    }
 }
 ```
+
+注意：未覆盖的方法默认会 panic。请在 OneBot 客户端只启用你需要的事件，
+或自行实现相关方法返回 `nil, nil` 来忽略事件。
+`NewHTTPEventServer` 在 `EventPath` 为空时默认使用 `/event`，且 action 请求统一返回 404（如需处理 action，请使用 `NewHTTPServer` + `ActionHandler`）。
 
 ## 项目结构
 
